@@ -147,7 +147,7 @@
         .task-item {
             height: 220px;
             box-shadow: 0 4px 12px var(--shadow-color);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.3s ease;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.5s ease;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -284,17 +284,16 @@
         .modal-btn#confirm-add-btn { background-color: #28a745; color: white; }
         .modal-btn#hibernate-btn { background-color: var(--hibernate-color); color: white; }
 
-        @keyframes settleAnimation {
+        @keyframes settleTransformAnimation {
             from {
-                opacity: 0;
                 transform: translateY(-60px) scale(1.1) rotate(var(--start-rotation-deg));
             }
             to {
-                opacity: 1;
                 transform: translateY(0) scale(1) rotate(var(--rotation-deg));
             }
         }
-        .new-note-animation { animation: settleAnimation .5s ease-out }
+        .settle-in-animation { animation: settleTransformAnimation .5s ease-out both; }
+        .is-entering { opacity: 0 !important; }
 
         @keyframes cardBounce {
             0%, 100% {
@@ -787,6 +786,7 @@
         
         let isKeyboardVisible = false;
         let modalJustOpened = false;
+        let appHasLoaded = false;
         
         // --- GOOGLE API & AUTH FUNCTIONS (Attached to window for onload) ---
         window.gapiLoaded = () => {
@@ -1036,10 +1036,14 @@
         };
 
         const renderCurrentView = (initialLoad = false) => {
+            const runIntroAnimation = initialLoad && !appHasLoaded;
             if(currentView === 'list') {
-                renderTasks(false, null, null, initialLoad);
+                renderTasks(false, null, null, runIntroAnimation);
             } else {
                 renderCalendar();
+            }
+            if (runIntroAnimation) {
+                appHasLoaded = true;
             }
         };
 
@@ -1120,15 +1124,21 @@
                 if (task.completedAt) taskItem.classList.add('completed');
                 if (isTaskHibernated(task)) taskItem.classList.add('hibernated');
 
-                if (initialLoad) {
-                    taskItem.classList.add('new-note-animation');
-                    taskItem.style.animationDelay = `${index * 150}ms`;
-                    // Clean up the inline style after the animation is done to prevent it from affecting future animations
-                    taskItem.addEventListener('animationend', () => {
-                        taskItem.style.animationDelay = '';
+                const isNewNote = (newTaskId && newTaskId === task.id);
+
+                if (initialLoad || isNewNote) {
+                    taskItem.classList.add('is-entering');
+
+                    setTimeout(() => {
+                        taskItem.classList.add('settle-in-animation');
+                        taskItem.classList.remove('is-entering');
+                    }, initialLoad ? index * 150 : 10);
+
+                    taskItem.addEventListener('animationend', (e) => {
+                        if (e.animationName === 'settleTransformAnimation') {
+                            taskItem.classList.remove('settle-in-animation');
+                        }
                     }, { once: true });
-                } else if (newTaskId && newTaskId === task.id) {
-                    taskItem.classList.add('new-note-animation');
                 }
                 
                 if (editedTaskId && editedTaskId === task.id) {
@@ -2250,4 +2260,6 @@
     </script>
 </body>
 </html>
+
+
 

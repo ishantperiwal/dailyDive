@@ -594,6 +594,12 @@
             backdrop-filter: blur(15px);
             border-top: 1px solid rgba(0,0,0,0.1);
             z-index: 150;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        body.is-mobile #mobile-bottom-bar.show {
+            transform: translateY(0);
         }
 
         body.is-mobile #add-task-btn,
@@ -749,7 +755,7 @@
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-          */ 
+         */  
        
         const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
@@ -1000,25 +1006,6 @@
                 setStatus('Read Error', true);
             }
             renderCurrentView(true);
-
-            // On mobile, after an async load + animation, the fixed bottom bar can get stuck
-            // due to browser UI changes (like the address bar collapsing).
-            // This forces a repaint after the animations have likely finished to ensure
-            // the bar is correctly positioned at the bottom of the new viewport.
-            if (isMobileDevice) {
-                // The total animation delay is roughly number of tasks * 150ms.
-                // We'll wait for that plus a small buffer.
-                const animationDuration = (tasks.length * 150) + 500;
-                setTimeout(() => {
-                    const mobileBar = document.getElementById('mobile-bottom-bar');
-                    if (mobileBar) {
-                        // A quick style change forces the browser to recalculate the element's position.
-                        mobileBar.style.bottom = '1px';
-                        void mobileBar.offsetHeight; // Force reflow
-                        mobileBar.style.bottom = ''; // Revert to stylesheet value
-                    }
-                }, animationDuration);
-            }
         };
 
         // --- CORE APP LOGIC & RENDER FUNCTIONS ---
@@ -1063,6 +1050,16 @@
             }
             if (runIntroAnimation) {
                 appHasLoaded = true;
+                if (isMobileDevice) {
+                    const visibleTasks = getFilteredTasks().filter(task => !task.archived);
+                    const cardAnimationTime = (visibleTasks.length * 65) + 500; 
+                    setTimeout(() => {
+                        const mobileBar = document.getElementById('mobile-bottom-bar');
+                        if (mobileBar) {
+                            mobileBar.classList.add('show');
+                        }
+                    }, cardAnimationTime);
+                }
             }
         };
 
@@ -1151,7 +1148,7 @@
                     setTimeout(() => {
                         taskItem.classList.add('settle-in-animation');
                         taskItem.classList.remove('is-entering');
-                    }, initialLoad ? index * 150 : 10);
+                    }, initialLoad ? index * 65 : 10);
 
                     taskItem.addEventListener('animationend', (e) => {
                         if (e.animationName === 'settleTransformAnimation') {
@@ -2279,7 +2276,4 @@
     </script>
 </body>
 </html>
-
-
-
 

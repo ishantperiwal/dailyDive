@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600&display=swap" rel="stylesheet">
     <style>
         :root {
             --background: #f7f8fc;
@@ -21,7 +21,7 @@
             --hibernate-color: #6c757d;
         }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--background);
             background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
             background-size: 25px 25px;
@@ -34,7 +34,6 @@
             background-image: none;
         }
         
-        /* This class will now be more robustly applied to prevent all scrolling */
         body.modal-open {
             overflow: hidden;
         }
@@ -43,8 +42,8 @@
             display: none;
         }
         body, .modal-note {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
 
         .app-container { max-width: 1200px; margin: auto; position: relative; min-height: 100vh; display: flex; flex-direction: column; }
@@ -65,11 +64,10 @@
             align-items: center;
             width: 100%;
             margin-bottom: 15px;
-            gap: 10px; /* Added gap for new elements */
+            gap: 10px;
         }
-        header h1 { font-size: 22px; font-weight: 600; margin-right: auto; } /* Push other elements to the right */
+        header h1 { font-size: 22px; font-weight: 600; margin-right: auto; }
 
-        /* --- GOOGLE SHEETS SYNC STYLES --- */
         #auth-container { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         
         #filter-bar-container {
@@ -135,22 +133,22 @@
             position: absolute;
             top: 4px;
             left: 4px;
-            width: 38px; /* Matches toggle-option width */
-            height: 32px; /* Matches toggle-option height */
+            width: 38px;
+            height: 32px;
             background-color: #fff;
             border-radius: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         .view-toggle.calendar-mode .toggle-thumb {
-            transform: translateX(38px); /* Move by the width of one option */
+            transform: translateX(38px);
         }
 
         #task-list-view { padding: 25px; display: grid; grid-template-columns: repeat(auto-fit, 320px); gap: 25px; justify-content: center; flex-grow: 1; }
         .task-item {
             height: 220px;
             box-shadow: 0 4px 12px var(--shadow-color);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.5s ease;
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s ease, opacity 0.5s ease;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -161,15 +159,29 @@
         }
         .task-item:active {
             transform: rotate(var(--rotation-deg, 0deg)) scale(0.97);
-            transition-duration: 0.05s; /* Make the press down feel instant */
+            transition-duration: 0.05s;
         }
         .task-item.is-interacting {
-            z-index: 10; /* Bring to front */
-            box-shadow: 0 8px 20px var(--shadow-color); /* Lifted shadow */
-            transform: rotate(0deg) scale(1.03) translateY(-5px) !important; /* Flatten and lift */
+            z-index: 10;
+            box-shadow: 0 8px 20px var(--shadow-color);
+            transform: rotate(0deg) scale(1.03) translateY(-5px) !important;
             transition-duration: 0.25s;
         }
-        .task-content { padding: 20px 25px; font-size: 18px; line-height: 1.5; width: 100%; flex-grow: 1; box-sizing: border-box; user-select: none; transition: color 0.3s, transform 0.3s ease; cursor: grab; background: transparent; border: none; display: flex; flex-direction: column; }
+        .task-content { 
+            padding: 20px 25px; 
+            font-size: 18px; 
+            line-height: 1.5; 
+            width: 100%; 
+            flex-grow: 1; 
+            box-sizing: border-box; 
+            user-select: none; 
+            transition: color 0.3s, transform 0.3s ease; 
+            cursor: grab; 
+            background: transparent; 
+            border: none; 
+            display: flex; 
+            flex-direction: column; 
+        }
         .task-item.completed, .task-item.hibernated { opacity: 0.7; }
         .task-item.completed .task-content { color: rgba(0, 0, 0, 0.5); cursor: default; }
         .task-item.completed .task-text-display { text-decoration: line-through; }
@@ -181,21 +193,15 @@
         .task-item.completed .archive-btn {
             opacity: 1;
             transform: translateX(0);
-            transition-delay: 0.6s; /* This makes the button wait for the card to settle before sliding in */
+            transition-delay: 0.6s;
         }
         .task-item.is-sliding-complete { opacity: 0.7; }
-        .task-item.is-sliding-complete .archive-btn,
-        .task-item.is-sliding-uncomplete .archive-btn {
-            transition-delay: 0s;
-        }
-        .task-item.is-sliding-complete .archive-btn {
-            opacity: 1;
-            transform: translateX(0);
-        }
+        
         .task-item.is-sliding-uncomplete { opacity: 1; }
         .task-item.is-sliding-uncomplete .archive-btn {
-             opacity: 0;
+            opacity: 0;
             transform: translateX(100%);
+            transition-delay: 0s;
         }
 
         .uncomplete-placeholder {
@@ -219,7 +225,7 @@
         .calendar-header h2 { margin: 0; text-align: center; flex-grow: 1; }
         .calendar-nav-btn { background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; transition: background-color 0.2s; }
         .calendar-nav-btn:hover { background-color: #f7f7f7; }
-        .calendar-grid-container { /* This is now just a layout wrapper */ }
+        .calendar-grid-container { }
         #calendar-wrapper { overflow: hidden; }
         #calendar-slider { display: flex; width: 300%; position: relative; transform: translateX(-33.3333%); }
         .calendar-month-grid {
@@ -228,7 +234,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 600px; /* Give a height to prevent collapse during load */
+            min-height: 600px;
         }
         .day-grid-wrapper {
             position: absolute;
@@ -256,7 +262,7 @@
         .task-bar.has-next-indicator { padding-right: 28px; }
         .task-continuation-indicator {
             position: absolute;
-            top: -1px; /* Align with border */
+            top: -1px;
             bottom: -1px;
             width: 20px;
             background: rgba(0,0,0,0.07);
@@ -287,16 +293,10 @@
         .modal-btn#confirm-add-btn { background-color: #28a745; color: white; }
         .modal-btn#hibernate-btn { background-color: var(--hibernate-color); color: white; }
 
-        @keyframes settleTransformAnimation {
-            from {
-                transform: translateY(-60px) scale(1.1) rotate(var(--start-rotation-deg));
-            }
-            to {
-                transform: translateY(0) scale(1) rotate(var(--rotation-deg));
-            }
+        .is-entering {
+            opacity: 0;
+            transform: translateY(-60px) scale(1.1) rotate(var(--start-rotation-deg));
         }
-        .settle-in-animation { animation: settleTransformAnimation .5s ease-out both; }
-        .is-entering { opacity: 0 !important; }
 
         @keyframes cardBounce {
             0%, 100% {
@@ -317,13 +317,16 @@
         .modal-note { width: 440px; max-width: 95vw; background-color: #fffc79; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; flex-direction: column; max-height: 80vh; }
 
         #modal-note-content { flex-grow: 1; overflow-y: auto; padding: 0 25px; }
+        #task-title-input, .daily-entry-textarea {
+            font-family: 'Bricolage Grotesque', sans-serif;
+        }
         #task-title-input {
             background: transparent;
             border: none;
             outline: none;
             padding: 25px 0 15px 0;
             font-size: 22px;
-            font-weight: bold;
+            font-weight: 600;
             line-height: 1.3;
             box-sizing: border-box;
             width: 100%;
@@ -370,7 +373,7 @@
             white-space: pre-wrap;
         }
         .task-text-title {
-            font-weight: bold;
+            font-weight: 600;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -383,7 +386,6 @@
             opacity: 0.8;
             overflow: hidden;
         }
-
 
         #sticker-orb {
             position: absolute;
@@ -425,7 +427,7 @@
             right: 8px;
             display: flex;
             gap: 5px;
-            z-index: 6; /* Bring stickers to the front */
+            z-index: 6;
         }
         .sticker-link {
             font-size: 20px;
@@ -487,7 +489,6 @@
         @keyframes slide-out-right { to { transform: translateX(100%); opacity: 0; } }
         @keyframes slide-in-from-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* --- TOAST STYLES --- */
         #toast-container {
             position: fixed;
             bottom: 30px;
@@ -538,17 +539,17 @@
         }
 
         /* --- MOBILE-SPECIFIC STYLES --- */
-        #mobile-bottom-bar { display: none; } /* Hide container on desktop */
+        #mobile-bottom-bar { display: none; }
 
         body.is-mobile #modal-container {
             align-items: flex-end;
-            transition: none; /* Removes the fade-in, making it appear instantly */
+            transition: none;
         }
 
         body.is-mobile .modal-content {
             width: 100%;
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Sets slide-up duration */
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
         body.is-mobile #modal-container.show .modal-content {
@@ -566,14 +567,14 @@
         body.is-mobile .modal-controls {
             padding: 10px 20px 20px 20px;
             margin-top: 0;
-            background-color: #fffc79; /* Match note color */
+            background-color: #fffc79;
         }
         
         body.is-mobile #hibernate-btn {
             background-color: #f5a623;
             width: 50px;
             height: 50px;
-            flex-shrink: 0; /* Prevents the button from being squashed in the flex container */
+            flex-shrink: 0;
         }
 
         body.is-mobile #confirm-add-btn {
@@ -592,7 +593,6 @@
             left: 0;
             right: 0;
             padding: 10px 25px;
-            /* Add padding for iOS home bar safe area */
             padding-bottom: calc(15px + env(safe-area-inset-bottom));
             background: rgba(248, 248, 248, 0.85);
             backdrop-filter: blur(15px);
@@ -651,7 +651,6 @@
         
         body.is-mobile #task-list-view,
         body.is-mobile #calendar-view {
-            /* Add padding to the bottom to not be obscured by the bottom bar */
             padding-bottom: 100px;
         }
 
@@ -665,7 +664,6 @@
         <header>
             <div class="header-top-row">
                 <h1 id="header-title"></h1>
-                <!-- GOOGLE SHEETS AUTH CONTAINER -->
                 <div id="auth-container">
                 </div>
                 <div id="view-toggle" class="view-toggle" title="Switch View">
@@ -741,31 +739,13 @@
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 
     <script>
-    // --- IIFE Wrapper ---
-    // This function wrapper encapsulates the entire application logic,
-    // preventing variables from leaking into the global scope.
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-        // Exposing API Keys and Client IDs in client-side JavaScript is a major security risk.
-        // Anyone can view your source code and steal these credentials, potentially leading to
-        // unauthorized access and misuse of your Google Cloud project and billing.
-        //
-        // FOR PRODUCTION: This authentication logic MUST be handled on a secure server-side backend.
-        // The client should only communicate with your server, which then makes authenticated
-        // requests to the Google Sheets API.
-         /*
-        const API_KEY = ''; // Your Google API Key
-        const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
-        const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-         */   
-       
-        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
-        const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
-        const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-        
-
-        // This flag determines which mode the app runs in.
+        const API_KEY = ''; 
+        const CLIENT_ID = '';
+        const SPREADSHEET_ID = '';
+           
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
         const isMobileDevice = /Mobi/i.test(navigator.userAgent);
 
@@ -775,7 +755,6 @@
         let tokenClient;
         let isAuthorized = false;
 
-        // DOM element references, populated on DOMContentLoaded
         let toastContainerEl, toastMessageEl, toastAuthorizeBtn;
         let toastTimeout = null;
 
@@ -797,7 +776,6 @@
         let modalJustOpened = false;
         let appHasLoaded = false;
         
-        // --- GOOGLE API & AUTH FUNCTIONS (Attached to window for onload) ---
         window.gapiLoaded = () => {
             gapi.load('client', initializeGapiClient);
         }
@@ -806,7 +784,7 @@
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: 'https://www.googleapis.com/auth/spreadsheets',
-                callback: gapiClientCallback, // This callback handles token responses
+                callback: gapiClientCallback,
             });
             gisInited = true;
             tryAppInitialization();
@@ -832,16 +810,15 @@
         const updateSigninStatus = (isSignedIn) => {
             isAuthorized = isSignedIn;
             if (isAuthorized) {
-                toastContainerEl.classList.remove('show'); // Hide sign-in prompt
+                toastContainerEl.classList.remove('show');
                 setStatus('Connected');
                 loadData();
             } else {
-                // This state is reached if using G-Sheets and sign-in fails or user signs out
                 toastMessageEl.textContent = 'Sync to Google Sheets';
-                toastMessageEl.className = 'toast-message'; // Reset classes
+                toastMessageEl.className = 'toast-message';
                 toastAuthorizeBtn.style.display = 'block';
                 toastContainerEl.classList.add('show');
-                clearTimeout(toastTimeout); // Make it persistent
+                clearTimeout(toastTimeout);
 
                 tasks = [];
                 allTags = { people: [], modules: [] };
@@ -853,18 +830,16 @@
             if (!toastMessageEl || !toastContainerEl) return;
 
             clearTimeout(toastTimeout);
-            toastAuthorizeBtn.style.display = 'none'; // Always hide button for temporary statuses
+            toastAuthorizeBtn.style.display = 'none';
             toastMessageEl.textContent = message;
             
-            toastMessageEl.className = 'toast-message'; // Reset classes before adding new ones
+            toastMessageEl.className = 'toast-message';
             if (isError) toastMessageEl.classList.add('error');
             if (['Syncing...', 'Saving...', 'Reading data...'].includes(message)) {
                 toastMessageEl.classList.add('syncing');
             }
 
             toastContainerEl.classList.add('show');
-
-            // Set timeout to hide the toast
             toastTimeout = setTimeout(() => {
                 toastContainerEl.classList.remove('show');
             }, 3000);
@@ -876,14 +851,12 @@
             }
         }
 
-        // --- DATA HANDLING ---
         const loadData = async () => {
             if (useGoogleSheets) {
                 if (isAuthorized) {
                    await readFromSheet();
                 }
             } else {
-                // Fallback to local storage with updated, more realistic placeholder data
                 const storedTasks = localStorage.getItem('tasks');
                 if (storedTasks) {
                     tasks = JSON.parse(storedTasks);
@@ -906,7 +879,7 @@
                         stickers: []
                     }];
                 }
-                tasks.forEach(parseTaskHibernation); // Parse on load
+                tasks.forEach(parseTaskHibernation);
                 allTags = JSON.parse(localStorage.getItem('allTags')) || { people: ['Alice', 'Bob'], modules: ['Frontend', 'API', 'Database'] };
                 renderCurrentView(true);
             }
@@ -922,7 +895,6 @@
                     }, 2000);
                 }
             } else {
-                // Before saving, put hibernation data back into content
                 const tasksToSave = tasks.map(prepareTaskForSaving);
                 localStorage.setItem('tasks', JSON.stringify(tasksToSave));
                 localStorage.setItem('allTags', JSON.stringify(allTags));
@@ -939,15 +911,14 @@
         };
 
         const prepareTaskForSaving = (task) => {
-            const taskCopy = JSON.parse(JSON.stringify(task)); // Deep copy
+            const taskCopy = JSON.parse(JSON.stringify(task));
             if (taskCopy.hibernationPeriods && taskCopy.hibernationPeriods.length > 0) {
                 if (!taskCopy.content) taskCopy.content = {};
                 taskCopy.content._hibernation = taskCopy.hibernationPeriods;
             }
-            delete taskCopy.hibernationPeriods; // Remove from top level before saving
+            delete taskCopy.hibernationPeriods;
             return taskCopy;
         };
-
 
         const readFromSheet = async () => {
             setStatus('Reading data...');
@@ -957,17 +928,17 @@
                     ranges: ['tasks!A:H', 'tags!A:B'],
                 });
 
-                const taskValueRange = response.result.valueRanges && response.result.valueRanges[0];
-                const tagValueRange = response.result.valueRanges && response.result.valueRanges[1];
+                const taskValueRange = response.result.valueRanges?.[0];
+                const tagValueRange = response.result.valueRanges?.[1];
 
-                const taskRows = (taskValueRange && taskValueRange.values) || [];
-                const tagRows = (tagValueRange && tagValueRange.values) || [];
+                const taskRows = taskValueRange?.values || [];
+                const tagRows = tagValueRange?.values || [];
 
                 const parsedTasks = [];
                 if (taskRows.length > 1) {
                     taskRows.slice(1).forEach((row, index) => {
                         try {
-                            if (!Array.isArray(row)) { return; }
+                            if (!Array.isArray(row)) return;
                             const task = {
                                 id: parseInt(row[0], 10),
                                 title: row[1] || 'Untitled Task',
@@ -978,7 +949,7 @@
                                 tags: JSON.parse(row[6] || '{}'),
                                 stickers: JSON.parse(row[7] || '[]')
                             };
-                            if (isNaN(task.id) || !task.createdAt) { return; }
+                            if (isNaN(task.id) || !task.createdAt) return;
                             parseTaskHibernation(task);
                             parsedTasks.push(task);
                         } catch (e) {
@@ -992,7 +963,7 @@
                 if (tagRows.length > 1) {
                     tagRows.slice(1).forEach((row, index) => {
                         try {
-                            if (!Array.isArray(row) || row.length < 2) { return; }
+                            if (!Array.isArray(row) || row.length < 2) return;
                             const [category, tag] = row;
                             if (category && tag && parsedTags.hasOwnProperty(category)) {
                                 parsedTags[category].push(tag);
@@ -1011,7 +982,6 @@
             renderCurrentView(true);
         };
 
-        // --- CORE APP LOGIC & RENDER FUNCTIONS ---
         const isTaskHibernated = (task) => {
             if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) {
                 return false;
@@ -1021,9 +991,9 @@
         };
         
         const getTaskStatus = (task) => {
-            if (task.completedAt) return 2; // Completed
-            if (isTaskHibernated(task)) return 1; // Hibernated
-            return 0; // Active
+            if (task.completedAt) return 2;
+            if (isTaskHibernated(task)) return 1;
+            return 0;
         };
         
         const sortTasks = () => {
@@ -1032,13 +1002,12 @@
                 const statusB = getTaskStatus(b);
         
                 if (statusA !== statusB) {
-                    return statusA - statusB; // Active (0) < Hibernated (1) < Completed (2)
+                    return statusA - statusB;
                 }
         
-                // If statuses are the same, sort by date
-                if (statusA === 2) { // Both completed
+                if (statusA === 2) {
                     return new Date(b.completedAt) - new Date(a.completedAt);
-                } else { // Both active or both hibernated
+                } else {
                     return new Date(b.createdAt) - new Date(a.createdAt);
                 }
             });
@@ -1059,14 +1028,10 @@
                     setTimeout(() => {
                         const mobileBar = document.getElementById('mobile-bottom-bar');
                         if (mobileBar) {
-                            // Before animating, force a repaint to ensure the browser has the correct
-                            // final viewport dimensions, especially after the address bar collapses.
-                            // This prevents the bar from animating to the wrong spot and then jumping.
                             mobileBar.style.bottom = '1px';
-                            void mobileBar.offsetHeight; // Force reflow
-                            mobileBar.style.bottom = ''; // Revert to stylesheet value
+                            void mobileBar.offsetHeight;
+                            mobileBar.style.bottom = '';
 
-                            // Now, in the next available frame, trigger the slide-up animation.
                             requestAnimationFrame(() => {
                                 mobileBar.classList.add('show');
                             });
@@ -1132,7 +1097,6 @@
             const taskListView = document.getElementById('task-list-view');
             const firstPositions = new Map();
             if (animateLayout) {
-                // Before re-rendering, capture each card's position AND its current rotation value.
                 taskListView.querySelectorAll('.task-item').forEach(el => {
                     const style = window.getComputedStyle(el);
                     firstPositions.set(el.dataset.id, {
@@ -1157,17 +1121,11 @@
 
                 if (initialLoad || isNewNote) {
                     taskItem.classList.add('is-entering');
-
                     setTimeout(() => {
-                        taskItem.classList.add('settle-in-animation');
-                        taskItem.classList.remove('is-entering');
+                        requestAnimationFrame(() => {
+                            taskItem.classList.remove('is-entering');
+                        });
                     }, initialLoad ? index * 65 : 10);
-
-                    taskItem.addEventListener('animationend', (e) => {
-                        if (e.animationName === 'settleTransformAnimation') {
-                            taskItem.classList.remove('settle-in-animation');
-                        }
-                    }, { once: true });
                 }
                 
                 if (editedTaskId && editedTaskId === task.id) {
@@ -1278,7 +1236,7 @@
 
                 taskListView.querySelectorAll('.task-item:not(.new-note-animation)').forEach(el => {
                     const id = el.dataset.id;
-                    const first = firstPositions.get(id); // This is now an object: { rect, rotation }
+                    const first = firstPositions.get(id);
                     if (first) {
                         const last = el.getBoundingClientRect();
                         const deltaX = first.rect.left - last.left;
@@ -1286,36 +1244,28 @@
                         
                         const newRotation = window.getComputedStyle(el).getPropertyValue('--rotation-deg');
 
-                        // Only animate if position OR rotation has changed.
                         if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1 || first.rotation.trim() !== newRotation.trim()) {
                              elementsToAnimate.push({ el, deltaX, deltaY, oldRotation: first.rotation, newRotation });
                         }
                     }
                 });
 
-                // INVERT: Before the browser can paint, instantly move elements to their old positions and rotations.
                 elementsToAnimate.forEach(({ el, deltaX, deltaY, oldRotation }) => {
                     el.style.transition = 'none';
-                    // Apply the original rotation along with the positional translation.
                     el.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${oldRotation})`;
                 });
                 
-                // Force the browser to apply the INVERT styles before we proceed.
                 void taskListView.offsetWidth;
 
-                // PLAY: After the 150ms delay, animate the cards to their final position and rotation.
                 setTimeout(() => {
                     elementsToAnimate.forEach(({ el, newRotation }) => {
-                        // Apply the transition and animate to the new rotation.
-                        // The translate() part implicitly animates to 0.
                         el.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
                         el.style.transform = `rotate(${newRotation})`;
 
-                        // After the animation finishes, clean up the inline styles.
                         el.addEventListener('transitionend', (e) => {
                             if (e.propertyName === 'transform') {
                                 el.style.transition = '';
-                                el.style.transform = ''; // Clear the inline transform so CSS can take over again.
+                                el.style.transform = '';
                             }
                         }, { once: true });
                     });
@@ -1327,7 +1277,7 @@
             container.innerHTML = '';
             tags.forEach(tag => { const chip = document.createElement('div'); chip.className = 'chip'; chip.textContent = tag; chip.dataset.tag = tag; container.appendChild(chip); });
             const addBtn = document.createElement('button');
-            addBtn.type = 'button'; // Explicitly set type to prevent form submission
+            addBtn.type = 'button';
             addBtn.id = `add-${category}-tag-btn`; 
             addBtn.textContent = '+'; 
             addBtn.className = 'add-tag-btn'; 
@@ -1373,42 +1323,58 @@
             viewStartDate.setDate(viewStartDate.getDate() - viewStartDate.getDay());
             const viewEndDate = new Date(lastDayOfMonth);
             viewEndDate.setDate(viewEndDate.getDate() + (6 - viewEndDate.getDay()));
-            let firstPassSlots = new Map();
+
             const numWeeks = Math.ceil((viewEndDate - viewStartDate) / (86400000 * 7));
             let rowMaxSlots = Array(numWeeks).fill(0);
+            
+            let dailyTaskSlots = new Map();
+            for (let d = new Date(viewStartDate); d <= viewEndDate; d.setDate(d.getDate() + 1)) {
+                dailyTaskSlots.set(toYYYYMMDD(d), []);
+            }
 
             tasksForCalendar.forEach(task => {
                 const taskStart = startOfDay(new Date(task.createdAt));
                 const taskEnd = task.completedAt ? startOfDay(new Date(task.completedAt)) : today;
+                
                 if (taskEnd < viewStartDate || taskStart > viewEndDate) return;
+                
                 let slot = 0;
                 while (true) {
-                    let isTaken = false;
+                    let isSlotTaken = false;
                     for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
-                         if (isDateInHibernation(d, task)) continue;
                         const dateStr = toYYYYMMDD(d);
-                        if (firstPassSlots.has(dateStr) && firstPassSlots.get(dateStr).includes(slot)) {
-                            isTaken = true; break;
+                        if (isDateInHibernation(d, task)) continue;
+                        if (dailyTaskSlots.has(dateStr) && dailyTaskSlots.get(dateStr)[slot]) {
+                            isSlotTaken = true;
+                            break;
                         }
                     }
-                    if (!isTaken) break;
+                    if (!isSlotTaken) break;
                     slot++;
                 }
+                
                 for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
-                     if (isDateInHibernation(d, task)) continue;
                     const dateStr = toYYYYMMDD(d);
-                    if (!firstPassSlots.has(dateStr)) firstPassSlots.set(dateStr, []);
-                    firstPassSlots.get(dateStr).push(slot);
-                    if (d >= viewStartDate && d <= viewEndDate) {
-                        const timeDiff = d.getTime() - viewStartDate.getTime();
-                        const dayDiff = Math.floor(timeDiff / 86400000);
-                        const rowIndex = Math.floor(dayDiff / 7);
-                        if(rowMaxSlots[rowIndex] !== undefined) {
-                            rowMaxSlots[rowIndex] = Math.max(rowMaxSlots[rowIndex], slot + 1);
-                        }
+                    if (isDateInHibernation(d, task)) continue;
+                    if (dailyTaskSlots.has(dateStr)) {
+                        dailyTaskSlots.get(dateStr)[slot] = task;
                     }
                 }
             });
+
+            for (let i = 0; i < numWeeks; i++) {
+                let maxSlotsThisWeek = 0;
+                for (let j = 0; j < 7; j++) {
+                    const dayDate = new Date(viewStartDate);
+                    dayDate.setDate(dayDate.getDate() + (i * 7) + j);
+                    const dateStr = toYYYYMMDD(dayDate);
+                    if (dailyTaskSlots.has(dateStr)) {
+                        const tasksOnDay = dailyTaskSlots.get(dateStr).filter(t => t).length;
+                        maxSlotsThisWeek = Math.max(maxSlotsThisWeek, tasksOnDay);
+                    }
+                }
+                rowMaxSlots[i] = maxSlotsThisWeek;
+            }
 
             const baseRowHeight = 100;
             const taskBarHeight = 28;
@@ -1428,7 +1394,6 @@
 
             gridContentWrapper.style.gridTemplateRows = rowHeights.map(h => `${h}px`).join(' ');
 
-            let dateCellMap = new Map();
             for (let d = new Date(viewStartDate); d <= viewEndDate; d.setDate(d.getDate() + 1)) {
                 const date = new Date(d);
                 const isOtherMonth = date.getMonth() !== month;
@@ -1440,93 +1405,84 @@
                 cell.dataset.date = toYYYYMMDD(date);
                 cell.innerHTML = `<div class="day-number">${date.getDate()}</div>`;
                 gridContentWrapper.appendChild(cell);
-                dateCellMap.set(toYYYYMMDD(date), cell);
             }
 
-            let dailySlots = new Map();
             tasksForCalendar.forEach(task => {
                 const taskStart = startOfDay(new Date(task.createdAt));
                 const taskEnd = task.completedAt ? startOfDay(new Date(task.completedAt)) : today;
                 if (taskEnd < viewStartDate || taskStart > viewEndDate) return;
-                let slot = 0;
-                while (true) {
-                    let isTaken = false;
-                    for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
-                        if (isDateInHibernation(d, task)) continue;
-                        const dateStr = toYYYYMMDD(d);
-                        if (dailySlots.has(dateStr) && dailySlots.get(dateStr).includes(slot)) {
-                            isTaken = true; break;
-                        }
-                    }
-                    if (!isTaken) break;
-                    slot++;
-                }
-                for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
-                    if (isDateInHibernation(d, task)) continue;
-                    const dateStr = toYYYYMMDD(d);
-                    if (!dailySlots.has(dateStr)) dailySlots.set(dateStr, []);
-                    dailySlots.get(dateStr).push(slot);
-                }
 
                 let currentBarStart = null;
                 for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
                     if (isDateInHibernation(d, task)) {
-                        if (currentBarStart) { // A bar segment was active and now ends
-                            drawBarSegment(currentBarStart, new Date(d.getTime() - 86400000));
+                        if (currentBarStart) {
+                            drawBarSegment(currentBarStart, new Date(d.getTime() - 86400000), task);
                             currentBarStart = null;
                         }
                     } else {
-                        if (!currentBarStart) { // A new bar segment starts
+                        if (!currentBarStart) {
                             currentBarStart = new Date(d);
                         }
                     }
                 }
-                if (currentBarStart) { // Draw the final segment
-                    drawBarSegment(currentBarStart, taskEnd);
-                }
-
-                function drawBarSegment(start, end) {
-                    let segmentStart = new Date(start > viewStartDate ? start : viewStartDate);
-                    while(segmentStart <= end && segmentStart <= viewEndDate) {
-                        const dayOfWeek = segmentStart.getDay();
-                        const timeDiff = segmentStart.getTime() - viewStartDate.getTime();
-                        const dayDiff = Math.floor(timeDiff / 86400000);
-                        const rowIndex = Math.floor(dayDiff / 7);
-                        const endOfWeek = new Date(segmentStart);
-                        endOfWeek.setDate(endOfWeek.getDate() + (6 - dayOfWeek));
-                        const barEndDate = end < endOfWeek ? end : endOfWeek;
-                        if(barEndDate < viewStartDate) {
-                            segmentStart.setDate(segmentStart.getDate() + 7);
-                            continue;
-                        }
-                        const span = (barEndDate.getTime() - segmentStart.getTime()) / 86400000 + 1;
-                        const taskBar = document.createElement('div');
-                        taskBar.className = 'task-bar';
-                        taskBar.textContent = task.title;
-                        taskBar.style.backgroundColor = noteColors[task.id % noteColors.length].replace('79', 'b3');
-                        if (segmentStart.getDay() === 0 && (start < segmentStart || isDateInHibernation(new Date(segmentStart.getTime() - 86400000), task))) {
-                            const prevIndicator = document.createElement('span');
-                            prevIndicator.className = 'task-continuation-indicator prev';
-                            prevIndicator.textContent = '‹';
-                            taskBar.appendChild(prevIndicator);
-                            taskBar.classList.add('has-prev-indicator');
-                        }
-                        if (barEndDate.getDay() === 6 && (end > barEndDate || isDateInHibernation(new Date(barEndDate.getTime() + 86400000), task))) {
-                            const nextIndicator = document.createElement('span');
-                            nextIndicator.className = 'task-continuation-indicator next';
-                            nextIndicator.textContent = '›';
-                            taskBar.appendChild(nextIndicator);
-                            taskBar.classList.add('has-next-indicator');
-                        }
-                        taskBar.style.top = `${rowOffsets[rowIndex] + 40 + slot * 28}px`;
-                        taskBar.style.left = `calc(${(dayOfWeek / 7) * 100}% + 2px)`;
-                        taskBar.style.width = `calc(${(span / 7) * 100}% - 4px)`;
-                        taskBar.onclick = () => showModal(task);
-                        gridContentWrapper.appendChild(taskBar);
-                        segmentStart.setDate(segmentStart.getDate() + span);
-                    }
+                if (currentBarStart) {
+                    drawBarSegment(currentBarStart, taskEnd, task);
                 }
             });
+            
+            function drawBarSegment(start, end, task) {
+                let segmentStart = new Date(start > viewStartDate ? start : viewStartDate);
+                while(segmentStart <= end && segmentStart <= viewEndDate) {
+                    const dayOfWeek = segmentStart.getDay();
+                    const timeDiff = segmentStart.getTime() - viewStartDate.getTime();
+                    const dayDiff = Math.floor(timeDiff / 86400000);
+                    const rowIndex = Math.floor(dayDiff / 7);
+                    const endOfWeek = new Date(segmentStart);
+                    endOfWeek.setDate(endOfWeek.getDate() + (6 - dayOfWeek));
+                    const barEndDate = end < endOfWeek ? end : endOfWeek;
+                    if(barEndDate < viewStartDate) {
+                        segmentStart.setDate(segmentStart.getDate() + 7);
+                        continue;
+                    }
+
+                    const startDateStr = toYYYYMMDD(segmentStart);
+                    let slot = -1;
+                    if (dailyTaskSlots.has(startDateStr)) {
+                        slot = dailyTaskSlots.get(startDateStr).findIndex(t => t && t.id === task.id);
+                    }
+                    if (slot === -1) { 
+                        segmentStart.setDate(segmentStart.getDate() + 7); 
+                        continue; 
+                    }
+
+                    const span = (barEndDate.getTime() - segmentStart.getTime()) / 86400000 + 1;
+                    const taskBar = document.createElement('div');
+                    taskBar.className = 'task-bar';
+                    taskBar.textContent = task.title;
+                    taskBar.style.backgroundColor = noteColors[task.id % noteColors.length].replace('79', 'b3');
+                    if (segmentStart.getDay() === 0 && (start < segmentStart || isDateInHibernation(new Date(segmentStart.getTime() - 86400000), task))) {
+                        const prevIndicator = document.createElement('span');
+                        prevIndicator.className = 'task-continuation-indicator prev';
+                        prevIndicator.textContent = '‹';
+                        taskBar.appendChild(prevIndicator);
+                        taskBar.classList.add('has-prev-indicator');
+                    }
+                    if (barEndDate.getDay() === 6 && (end > barEndDate || isDateInHibernation(new Date(barEndDate.getTime() + 86400000), task))) {
+                        const nextIndicator = document.createElement('span');
+                        nextIndicator.className = 'task-continuation-indicator next';
+                        nextIndicator.textContent = '›';
+                        taskBar.appendChild(nextIndicator);
+                        taskBar.classList.add('has-next-indicator');
+                    }
+                    taskBar.style.top = `${rowOffsets[rowIndex] + 40 + slot * 28}px`;
+                    taskBar.style.left = `calc(${(dayOfWeek / 7) * 100}% + 2px)`;
+                    taskBar.style.width = `calc(${(span / 7) * 100}% - 4px)`;
+                    taskBar.onclick = () => showModal(task);
+                    gridContentWrapper.appendChild(taskBar);
+                    segmentStart.setDate(segmentStart.getDate() + span);
+                }
+            }
+            
             targetGrid.appendChild(gridContentWrapper);
             return gridContentWrapper;
         };
@@ -1548,7 +1504,7 @@
         };
 
         const showModal = (task = null) => {
-            history.pushState({ modalOpen: true }, 'modal'); // Add history state for back button handling
+            history.pushState({ modalOpen: true }, 'modal');
             document.body.classList.add('modal-open');
             modalJustOpened = true;
 
@@ -1582,7 +1538,6 @@
                     moduleChipContainer.querySelectorAll('.chip').forEach(chip => { if (task.tags.modules?.includes(chip.dataset.tag)) chip.classList.add('selected'); });
                 }
                 
-                // Only show hibernate button for active, non-completed tasks
                 if (task.completedAt) {
                     hibernateBtn.style.display = 'none';
                 } else {
@@ -1615,7 +1570,7 @@
                 const entryContainer = document.createElement('div');
                 entryContainer.className = 'daily-entry-container';
 
-                const dateObj = new Date(dateStr + 'T00:00:00'); // Treat as local time
+                const dateObj = new Date(dateStr + 'T00:00:00');
                 const dateHeader = document.createElement('div');
                 dateHeader.className = 'daily-entry-date';
                 dateHeader.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -1641,33 +1596,28 @@
             setTimeout(() => {
                 modalContainer.classList.add('show');
                 
-                // On mobile, delay focus until after the slide-up animation completes.
                 const focusDelay = isMobileDevice ? 350 : 0;
 
                 setTimeout(() => {
-                    // Guard against focusing if the modal was closed quickly
                     if (!modalContainer.classList.contains('show')) return;
 
                     const todayTextarea = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
     
-                    if (task && todayTextarea) { // If editing an existing task, focus today's note
+                    if (task && todayTextarea) {
                         todayTextarea.focus();
                         todayTextarea.setSelectionRange(todayTextarea.value.length, todayTextarea.value.length);
     
-                        // Add a temporary highlight effect
                         todayTextarea.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
                         setTimeout(() => {
                             if(todayTextarea) todayTextarea.style.backgroundColor = 'transparent';
                         }, 1500);
-                    } else { // Otherwise, focus the title for a new task
+                    } else {
                         taskTitleInput.focus();
                     }
                 }, focusDelay);
 
             }, 10);
 
-            // Set a flag to ignore clicks for a very short duration, preventing the opening click
-            // from also triggering a close.
             setTimeout(() => { modalJustOpened = false; }, 50);
         };
 
@@ -1767,7 +1717,7 @@
                 saveData();
                 renderTasks(true, newTaskId);
             }
-            history.back(); // This will trigger the popstate listener to close the modal
+            history.back();
         };
         
         const toggleHibernation = () => {
@@ -1776,17 +1726,15 @@
             if (!task) return;
         
             if (isTaskHibernated(task)) {
-                // Wake up: set end date on the last period
                 const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
                 lastPeriod.end = toYYYYMMDD(new Date());
             } else {
-                // Hibernate: add a new period with only a start date
                 task.hibernationPeriods.push({ start: toYYYYMMDD(new Date()) });
             }
         
             saveData();
             renderTasks(true, null, editingTaskId);
-            history.back(); // Close the modal
+            history.back();
         };
 
 
@@ -1844,6 +1792,7 @@
                 taskListView.style.display = 'grid';
                 calendarView.style.display = 'none';
                 currentView = 'list';
+                renderTasks(true); // Animate layout on view switch
             }
             viewToggle.classList.toggle('calendar-mode', isSwitchingToCalendar);
             viewToggle.querySelector('[data-view="list"]').classList.toggle('active', !isSwitchingToCalendar);
@@ -1851,7 +1800,6 @@
             updateHeader();
         };
 
-        // --- EVENT HANDLING ---
         let startX = 0, startY = 0, currentX = 0, currentY = 0, isDragging = false, isClick = true, targetTaskElement = null, dragDirectionLock = null;
 
         const onDragStart = (clientX, clientY, target) => {
@@ -1861,7 +1809,7 @@
                 isClick = true;
                 startX = clientX;
                 startY = clientY;
-                dragDirectionLock = null; // Reset direction lock
+                dragDirectionLock = null;
                 targetTaskElement.querySelector('.task-content').style.transition = 'none';
                 target.style.cursor = 'grabbing';
             }
@@ -1875,21 +1823,18 @@
             let diffY = currentY - startY;
 
             if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
-                isClick = false; // It's a drag, not a click
+                isClick = false;
             }
 
-            // Determine and lock the direction on the first significant movement
             if (!dragDirectionLock && !isClick) {
                 if (Math.abs(diffY) > Math.abs(diffX)) {
                     dragDirectionLock = 'vertical';
                 } else {
                     dragDirectionLock = 'horizontal';
-                    // Only add the interaction class for a confirmed horizontal swipe
                     targetTaskElement.classList.add('is-interacting');
                 }
             }
             
-            // Only apply horizontal transform if the drag is locked horizontally
             if (dragDirectionLock === 'horizontal') {
                 targetTaskElement.querySelector('.task-content').style.transform = `translateX(${diffX}px)`;
             }
@@ -1900,7 +1845,6 @@
             const taskContent = targetTaskElement.querySelector('.task-content');
             const elementToClean = targetTaskElement;
 
-            // Cleanup styles regardless of outcome
             elementToClean.classList.remove('is-interacting');
             taskContent.style.transition = 'transform 0.3s ease';
             taskContent.style.cursor = 'grab';
@@ -1913,37 +1857,29 @@
                 const task = tasks.find(t => t.id === taskId);
                 if (task) showModal(task);
                 taskContent.style.transform = 'translateX(0)';
-            } else if (dragDirectionLock === 'horizontal') { // Only process swipe logic if it was a horizontal swipe
+            } else if (dragDirectionLock === 'horizontal') {
                 const shouldComplete = !elementToClean.classList.contains('completed') && diffX > threshold;
                 const shouldUncomplete = elementToClean.classList.contains('completed') && diffX < -threshold;
 
                 if (shouldComplete) {
-                    const timeAgoEl = elementToClean.querySelector('.time-ago');
-                    const completionDate = new Date();
-                    timeAgoEl.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
                     elementToClean.classList.add('is-completing', 'is-sliding-complete');
                     taskContent.addEventListener('transitionend', () => completeTask(taskId), { once: true });
                 } else if (shouldUncomplete) {
-                    const timeAgoEl = elementToClean.querySelector('.time-ago');
-                    const task = tasks.find(t => t.id === taskId);
-                    if (task) timeAgoEl.textContent = getRelativeTime(task.createdAt);
                     elementToClean.classList.remove('completed');
                     elementToClean.classList.add('is-sliding-uncomplete');
                     taskContent.addEventListener('transitionend', () => uncompleteTask(taskId), { once: true });
                 }
                 taskContent.style.transform = 'translateX(0)';
-            } else { // This was a vertical swipe, so just reset the position
+            } else {
                  taskContent.style.transform = 'translateX(0)';
             }
 
-            // Reset all state variables
             isDragging = false;
             targetTaskElement = null;
             dragDirectionLock = null;
         };
 
         const handleAddTag = (container, category) => {
-            // Get the current selection state before altering the DOM
             const peopleChipContainer = document.getElementById('people-chip-container');
             const moduleChipContainer = document.getElementById('module-chip-container');
             const selectedPeople = Array.from(peopleChipContainer.querySelectorAll('.chip.selected')).map(c => c.dataset.tag);
@@ -1962,7 +1898,6 @@
                 const newTag = input.value.trim();
                 if (newTag && !allTags[category].find(t => t.toLowerCase() === newTag.toLowerCase())) {
                     allTags[category].push(newTag);
-                    // Automatically select the newly created tag
                     if (category === 'people') {
                         selectedPeople.push(newTag);
                     } else {
@@ -1971,10 +1906,8 @@
                     saveData();
                 }
                 
-                // Re-render all chips
                 renderAllChips();
 
-                // Re-apply the saved selection state to the new chips
                 peopleChipContainer.querySelectorAll('.chip').forEach(chip => {
                     if (selectedPeople.includes(chip.dataset.tag)) {
                         chip.classList.add('selected');
@@ -1990,7 +1923,7 @@
             input.addEventListener('blur', finalizeNewTag);
             input.addEventListener('keydown', event => { 
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // Prevent form submission
+                    event.preventDefault();
                     finalizeNewTag(); 
                 }
             });
@@ -2083,46 +2016,32 @@
 
         let handleDesktopKeys;
 
-        // --- APP INITIALIZATION ---
         const initializeApp = () => {
-            // Add mobile class to body if applicable
             if (isMobileDevice) {
                 document.body.classList.add('is-mobile');
-
-                // Create and populate mobile bottom bar by moving existing elements
                 const mobileBottomBar = document.createElement('div');
                 mobileBottomBar.id = 'mobile-bottom-bar';
-
                 const stickerOrb = document.getElementById('sticker-orb');
                 const viewToggle = document.getElementById('view-toggle');
                 const addTaskBtn = document.getElementById('add-task-btn');
-
-                // Move controls to the mobile bottom bar
                 mobileBottomBar.appendChild(stickerOrb);
                 mobileBottomBar.appendChild(viewToggle);
                 mobileBottomBar.appendChild(addTaskBtn);
-
                 document.body.appendChild(mobileBottomBar);
             }
 
-            // --- History and Back Button Management ---
-            // Replace initial state to prevent navigating back from the app's entry page.
             history.replaceState({ app_initial_state: true }, '');
 
             window.addEventListener('popstate', (event) => {
                 const modalContainer = document.getElementById('modal-container');
-                // If the modal is open, the back button should close it.
                 if (modalContainer.classList.contains('show')) {
                     hideModal();
                 } 
-                // If we're at the initial state and the user tries to go back,
-                // push the state again to "trap" them in the app.
                 else if (event.state === null || !event.state.app_initial_state) {
                     history.pushState({ app_initial_state: true }, '');
                 }
             });
 
-            // Get DOM element references
             toastContainerEl = document.getElementById('toast-container');
             toastMessageEl = document.getElementById('toast-message');
             toastAuthorizeBtn = document.getElementById('toast-authorize-btn');
@@ -2145,7 +2064,6 @@
             };
             taskForm.addEventListener('keydown', handleDesktopKeys);
 
-            // Attach Event Listeners
             updateHeader();
             document.getElementById('add-task-btn').addEventListener('click', () => showModal());
             document.getElementById('hibernate-btn').addEventListener('click', toggleHibernation);
@@ -2156,16 +2074,12 @@
             document.getElementById('sticker-modal-save-btn').addEventListener('click', saveSticker);
             document.getElementById('sticker-modal-container').addEventListener('click', (e) => { if(e.target === e.currentTarget) hideStickerModal(); });
             modalContainer.addEventListener('click', (e) => {
-                if (modalJustOpened) return; // Prevents the modal from closing immediately after opening.
-
-                // By checking if the event target is the container itself, we prevent
-                // clicks from bubbling up from the underlying task list and accidentally
-                // closing the modal the moment it opens.
+                if (modalJustOpened) return;
                 if (e.target === modalContainer) {
                     if (isKeyboardVisible && document.activeElement) {
                         document.activeElement.blur();
                     } else {
-                        history.back(); // Triggers the popstate listener to hide the modal
+                        history.back();
                     }
                 }
             });
@@ -2179,7 +2093,7 @@
                     if (todayTextarea) {
                         todayTextarea.focus();
                     } else {
-                        taskForm.requestSubmit(); // Submit form if no other field to move to
+                        taskForm.requestSubmit();
                     }
                 }
             });
@@ -2242,17 +2156,16 @@
                 calendarSlider.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
 
                 if (wasHorizontalDrag && Math.abs(diffX) > threshold) {
-                    if (diffX < 0) { // Swiped left
+                    if (diffX < 0) {
                         calendarSlider.style.transform = 'translateX(-66.6666%)';
                         calendarDate.setMonth(calendarDate.getMonth() + 1);
-                    } else { // Swiped right
+                    } else {
                         calendarSlider.style.transform = 'translateX(0%)';
                         calendarDate.setMonth(calendarDate.getMonth() - 1);
                     }
                     updateHeader();
                     calendarSlider.addEventListener('transitionend', postSlideReset, { once: true });
                 } else {
-                    // If not a significant horizontal swipe, or if it was vertical, snap back.
                     calendarSlider.style.transform = 'translateX(-33.3333%)';
                 }
             };
@@ -2295,5 +2208,4 @@
     </script>
 </body>
 </html>
-
 

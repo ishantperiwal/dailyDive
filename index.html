@@ -570,6 +570,9 @@
         
         body.is-mobile #hibernate-btn {
             background-color: #f5a623;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0; /* Prevents the button from being squashed in the flex container */
         }
 
         body.is-mobile #confirm-add-btn {
@@ -754,12 +757,12 @@
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-         */  
+            */
        
         const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-         
+        
 
         // This flag determines which mode the app runs in.
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -1577,13 +1580,19 @@
                     peopleChipContainer.querySelectorAll('.chip').forEach(chip => { if (task.tags.people?.includes(chip.dataset.tag)) chip.classList.add('selected'); });
                     moduleChipContainer.querySelectorAll('.chip').forEach(chip => { if (task.tags.modules?.includes(chip.dataset.tag)) chip.classList.add('selected'); });
                 }
-                hibernateBtn.style.display = 'block';
-                if(isTaskHibernated(task)) {
-                    hibernateBtn.textContent = '☀️';
-                    hibernateBtn.title = 'Wake Up Task';
+                
+                // Only show hibernate button for active, non-completed tasks
+                if (task.completedAt) {
+                    hibernateBtn.style.display = 'none';
                 } else {
-                    hibernateBtn.textContent = '💤';
-                    hibernateBtn.title = 'Hibernate Task';
+                    hibernateBtn.style.display = 'block';
+                    if(isTaskHibernated(task)) {
+                        hibernateBtn.textContent = '☀️';
+                        hibernateBtn.title = 'Wake Up Task';
+                    } else {
+                        hibernateBtn.textContent = '💤';
+                        hibernateBtn.title = 'Hibernate Task';
+                    }
                 }
             } else {
                  hibernateBtn.style.display = 'none';
@@ -2285,7 +2294,4 @@
     </script>
 </body>
 </html>
-
-
-
 

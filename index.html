@@ -1014,6 +1014,58 @@
             renderCurrentView(true);
         };
 
+        const writeToSheet = async () => {
+            if (!isAuthorized) return;
+            setStatus('Saving...');
+            try {
+                // Prepare tasks data
+                const tasksToSave = tasks.map(prepareTaskForSaving);
+                const taskValues = [
+                    ['id', 'title', 'content', 'createdAt', 'completedAt', 'archived', 'tags', 'stickers'],
+                    ...tasksToSave.map(task => [
+                        task.id,
+                        task.title,
+                        JSON.stringify(task.content || {}),
+                        task.createdAt,
+                        task.completedAt || null,
+                        task.archived ? 'TRUE' : 'FALSE',
+                        JSON.stringify(task.tags || {}),
+                        JSON.stringify(task.stickers || [])
+                    ])
+                ];
+
+                // Prepare tags data
+                const tagValues = [
+                    ['category', 'tag'],
+                    ...allTags.people.map(tag => ['people', tag]),
+                    ...allTags.modules.map(tag => ['modules', tag])
+                ];
+
+                // Clear existing data from row 2 downwards
+                await gapi.client.sheets.spreadsheets.values.batchClear({
+                    spreadsheetId: SPREADSHEET_ID,
+                    resource: { ranges: ['tasks!A2:H', 'tags!A2:B'] }
+                });
+
+                // Write all data starting from row 1
+                await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                    spreadsheetId: SPREADSHEET_ID,
+                    resource: {
+                        valueInputOption: 'USER_ENTERED',
+                        data: [
+                            { range: 'tasks!A1', values: taskValues },
+                            { range: 'tags!A1', values: tagValues }
+                        ]
+                    }
+                });
+                
+                setStatus('Saved');
+            } catch (err) {
+                console.error('Error writing to sheet:', err);
+                setStatus('Save Error', true);
+            }
+        };
+
         const isTaskHibernated = (task) => {
             if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) {
                 return false;

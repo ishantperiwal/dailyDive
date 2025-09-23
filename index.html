@@ -542,11 +542,13 @@
 
         body.is-mobile #modal-container {
             align-items: flex-end;
+            transition: none; /* Removes the fade-in, making it appear instantly */
         }
 
         body.is-mobile .modal-content {
             width: 100%;
             transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Sets slide-up duration */
         }
 
         body.is-mobile #modal-container.show .modal-content {
@@ -744,11 +746,12 @@
         // FOR PRODUCTION: This authentication logic MUST be handled on a secure server-side backend.
         // The client should only communicate with your server, which then makes authenticated
         // requests to the Google Sheets API.
-        /* 
+         
+        /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-         */  
+        */   
        
         const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
@@ -1613,20 +1616,30 @@
             modalContainer.style.display = 'flex';
             setTimeout(() => {
                 modalContainer.classList.add('show');
-                const todayTextarea = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
+                
+                // On mobile, delay focus until after the slide-up animation completes.
+                const focusDelay = isMobileDevice ? 350 : 0;
 
-                if (task && todayTextarea) { // If editing an existing task, focus today's note
-                    todayTextarea.focus();
-                    todayTextarea.setSelectionRange(todayTextarea.value.length, todayTextarea.value.length);
+                setTimeout(() => {
+                    // Guard against focusing if the modal was closed quickly
+                    if (!modalContainer.classList.contains('show')) return;
 
-                    // Add a temporary highlight effect
-                    todayTextarea.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
-                    setTimeout(() => {
-                        if(todayTextarea) todayTextarea.style.backgroundColor = 'transparent';
-                    }, 1500);
-                } else { // Otherwise, focus the title for a new task
-                    taskTitleInput.focus();
-                }
+                    const todayTextarea = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
+    
+                    if (task && todayTextarea) { // If editing an existing task, focus today's note
+                        todayTextarea.focus();
+                        todayTextarea.setSelectionRange(todayTextarea.value.length, todayTextarea.value.length);
+    
+                        // Add a temporary highlight effect
+                        todayTextarea.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
+                        setTimeout(() => {
+                            if(todayTextarea) todayTextarea.style.backgroundColor = 'transparent';
+                        }, 1500);
+                    } else { // Otherwise, focus the title for a new task
+                        taskTitleInput.focus();
+                    }
+                }, focusDelay);
+
             }, 10);
 
             // Set a flag to ignore clicks for a very short duration, preventing the opening click
@@ -2238,6 +2251,7 @@
     </script>
 </body>
 </html>
+
 
 
 

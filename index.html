@@ -1,0 +1,2251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Removed user-scalable=no for better accessibility, allowing users to zoom. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Checklist</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --background: #f7f8fc;
+            --text-color: #333;
+            --accent-color: #007aff;
+            --archive-bg: #28a745;
+            --checkmark-color: #28a745;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --dot-color: #d7d7d7;
+            --hibernate-color: #6c757d;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+            background-size: 25px 25px;
+            margin: 0;
+            padding: 0;
+            transition: background-image 0.3s ease;
+        }
+
+        body.calendar-active {
+            background-image: none;
+        }
+        
+        /* This class will now be more robustly applied to prevent all scrolling */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        body, .modal-note {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .app-container { max-width: 1200px; margin: auto; position: relative; min-height: 100vh; display: flex; flex-direction: column; }
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 20px 20px 10px 20px;
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px;
+            gap: 10px; /* Added gap for new elements */
+        }
+        header h1 { font-size: 22px; font-weight: 600; margin-right: auto; } /* Push other elements to the right */
+
+        /* --- GOOGLE SHEETS SYNC STYLES --- */
+        #auth-container { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        
+        #filter-bar-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+        #filter-bar-container::-webkit-scrollbar { display: none; }
+        #filter-bar-container { -ms-overflow-style: none; scrollbar-width: none; }
+        #filter-bar {
+            display: flex;
+            gap: 10px;
+            padding-bottom: 5px;
+        }
+        .filter-chip {
+            padding: 6px 14px;
+            border-radius: 18px;
+            background-color: #e9e9f0;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border: 1px solid transparent;
+        }
+        .filter-chip:hover {
+            background-color: #dcdce5;
+        }
+        .filter-chip.active {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+
+        .view-toggle {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background-color: #e9e9f0;
+            border-radius: 20px;
+            padding: 4px;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        .toggle-option {
+            font-size: 20px;
+            width: 38px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: color 0.3s ease;
+            color: #555;
+        }
+        .toggle-option.active {
+            color: #000;
+        }
+        .toggle-thumb {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 38px; /* Matches toggle-option width */
+            height: 32px; /* Matches toggle-option height */
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .view-toggle.calendar-mode .toggle-thumb {
+            transform: translateX(38px); /* Move by the width of one option */
+        }
+
+        #task-list-view { padding: 25px; display: grid; grid-template-columns: repeat(auto-fit, 320px); gap: 25px; justify-content: center; flex-grow: 1; }
+        .task-item {
+            height: 220px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px;
+            border: 1px solid #ffffff;
+            transform: rotate(var(--rotation-deg, 0deg));
+        }
+        .task-item:active {
+            transform: rotate(var(--rotation-deg, 0deg)) scale(0.97);
+            transition-duration: 0.05s; /* Make the press down feel instant */
+        }
+        .task-item.is-interacting {
+            z-index: 10; /* Bring to front */
+            box-shadow: 0 8px 20px var(--shadow-color); /* Lifted shadow */
+            transform: rotate(0deg) scale(1.03) translateY(-5px) !important; /* Flatten and lift */
+            transition-duration: 0.25s;
+        }
+        .task-content { padding: 20px 25px; font-family: 'Georgia', serif; font-size: 18px; line-height: 1.5; width: 100%; flex-grow: 1; box-sizing: border-box; user-select: none; transition: color 0.3s, transform 0.3s ease; cursor: grab; background: transparent; border: none; display: flex; flex-direction: column; }
+        .task-item.completed, .task-item.hibernated { opacity: 0.7; }
+        .task-item.completed .task-content { color: rgba(0, 0, 0, 0.5); cursor: default; }
+        .task-item.completed .task-text-display { text-decoration: line-through; }
+        .task-item.is-completing .task-content .task-text-display { text-decoration: line-through; color: rgba(0, 0, 0, 0.5); }
+        .task-tags-container { padding: 0 10px 10px 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .task-tag { background-color: rgba(0, 0, 0, 0.07); padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+        .archive-btn { background-color: var(--archive-bg); color: white; border: none; cursor: pointer; width: 100px; align-self: stretch; display: flex; align-items: center; justify-content: center; font-size: 24px; opacity: 0; position: absolute; right: 0; top: 0; bottom: 0; transform: translateX(100%); transition: opacity 0.3s ease, transform 0.3s ease; flex-direction: column; gap: 5px; line-height: 1; }
+        .days-to-complete { font-size: 11px; font-weight: 500; }
+        .task-item.completed .archive-btn {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.6s; /* This makes the button wait for the card to settle before sliding in */
+        }
+        .task-item.is-sliding-complete { opacity: 0.7; }
+        .task-item.is-sliding-complete .archive-btn,
+        .task-item.is-sliding-uncomplete .archive-btn {
+            transition-delay: 0s;
+        }
+        .task-item.is-sliding-complete .archive-btn {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .task-item.is-sliding-uncomplete { opacity: 1; }
+        .task-item.is-sliding-uncomplete .archive-btn {
+             opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .uncomplete-placeholder {
+            width: 40px;
+            font-size: 24px;
+            color: var(--accent-color);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #add-task-btn { position: absolute; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: var(--accent-color); color: white; border: none; border-radius: 50%; font-size: 36px; box-shadow: 0 6px 15px rgba(0, 122, 255, 0.4); cursor: pointer; z-index: 100; transition: transform 0.3s ease, opacity 0.3s ease; }
+        #add-task-btn:hover { transform: scale(1.05); }
+        #calendar-view { display: none; padding: 20px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header h2 { margin: 0; text-align: center; flex-grow: 1; }
+        .calendar-nav-btn { background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; transition: background-color 0.2s; }
+        .calendar-nav-btn:hover { background-color: #f7f7f7; }
+        .calendar-grid-container { /* This is now just a layout wrapper */ }
+        #calendar-wrapper { overflow: hidden; }
+        #calendar-slider { display: flex; width: 300%; position: relative; transform: translateX(-33.3333%); }
+        .calendar-month-grid {
+            width: 33.3333%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px; /* Give a height to prevent collapse during load */
+        }
+        .day-grid-wrapper {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            transition: opacity 0.4s ease-in-out;
+        }
+        .loading-text {
+            font-size: 20px;
+            font-weight: 500;
+            color: #a0a0a0;
+            text-align: center;
+        }
+        .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; padding: 10px 0; font-weight: bold; color: #777; }
+        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(120px, auto); position: relative; }
+        .day-cell { border-right: 1px solid #eee; border-top: 1px solid #eee; padding: 8px; position: relative; }
+        .day-cell:nth-child(7n) { border-right: none; }
+        .day-cell.other-month .day-number { color: #ccc; }
+        .day-cell.today .day-number { background-color: var(--accent-color); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
+        .task-bar { position: absolute; height: 24px; color: #1f1f1f; text-shadow: 0 0 2px rgba(255,255,255,0.6); border-radius: 4px; font-size: 12px; padding: 0 8px; box-sizing: border-box; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 1; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); }
+        .task-bar.has-prev-indicator { padding-left: 28px; }
+        .task-bar.has-next-indicator { padding-right: 28px; }
+        .task-continuation-indicator {
+            position: absolute;
+            top: -1px; /* Align with border */
+            bottom: -1px;
+            width: 20px;
+            background: rgba(0,0,0,0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0,0,0,0.6);
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .task-continuation-indicator.prev {
+            left: 0;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+        .task-continuation-indicator.next {
+            right: 0;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+        #modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 200; opacity: 0; transition: opacity 0.5s ease; }
+        #modal-container.show { opacity: 1; }
+        .modal-content { text-align: center; transform: scale(0.95); transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        #modal-container.show .modal-content { transform: scale(1); }
+        .modal-controls { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+        .modal-btn { width: 50px; height: 50px; border-radius: 50%; border: none; font-size: 24px; margin: 0; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); transition: transform .2s ease, background-color .2s; }
+        .modal-btn:hover { transform: scale(1.1); }
+        .modal-btn#confirm-add-btn { background-color: #28a745; color: white; }
+        .modal-btn#hibernate-btn { background-color: var(--hibernate-color); color: white; }
+
+        @keyframes settleAnimation {
+            from {
+                opacity: 0;
+                transform: translateY(-60px) scale(1.1) rotate(var(--start-rotation-deg));
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotate(var(--rotation-deg));
+            }
+        }
+        .new-note-animation { animation: settleAnimation .5s ease-out }
+
+        @keyframes cardBounce {
+            0%, 100% {
+                transform: scale(1) rotate(var(--rotation-deg));
+            }
+            30% {
+                transform: scale(0.95) rotate(var(--rotation-deg));
+            }
+            60% {
+                transform: scale(1.05) rotate(var(--rotation-deg));
+            }
+        }
+        .task-edited-animation {
+            animation: cardBounce 0.6s ease-in-out;
+        }
+
+        .time-ago { font-size: 12px; color: rgba(0,0,0,0.5); font-family: 'Helvetica Neue', sans-serif; margin-bottom: 8px; }
+        .modal-note { width: 440px; max-width: 95vw; background-color: #fffc79; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; flex-direction: column; max-height: 80vh; }
+
+        #modal-note-content { flex-grow: 1; overflow-y: auto; padding: 0 25px; }
+        #task-title-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 25px 0 15px 0;
+            font-family: 'Georgia', serif;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.3;
+            box-sizing: border-box;
+            width: 100%;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            resize: none;
+            overflow-y: hidden;
+        }
+        .daily-entry-container { margin-top: 15px; }
+        .daily-entry-date { font-size: 12px; font-weight: bold; color: rgba(0,0,0,0.6); margin-bottom: 8px; text-align: left; }
+        .daily-entry-textarea {
+            background: transparent;
+            min-height: 60px;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-family: 'Georgia', serif;
+            font-size: 16px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            resize: none;
+            transition: background-color 0.5s ease;
+        }
+        #modal-note-footer { padding: 10px 0; border-top: 1px solid rgba(0,0,0,0.1); }
+
+        .chip-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 15px 15px 15px; }
+        .chip { background-color: rgba(80, 85, 90, 0.7); color: white; padding: 5px 12px; border-radius: 16px; font-size: 14px; cursor: pointer; transition: background-color .2s; }
+        .chip.selected { background-color: #343a40; }
+        .add-tag-btn { background: rgba(80, 85, 90, 0.7); color: white; border-radius: 50%; border: none; width: 28px; height: 28px; font-size: 18px; cursor: pointer; }
+
+        #new-tag-input {
+            background-color: rgba(255, 255, 255, 0.7);
+            color: #333;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            border: none;
+            outline: none;
+            width: 80px;
+        }
+
+        .tag-section-modal { padding: 10px 0; }
+        .tag-title-modal { font-size: 12px; text-transform: uppercase; color: #6c757d; margin: 0 0 10px 15px; text-align: left; }
+
+        .task-text-display {
+            white-space: pre-wrap;
+        }
+        .task-text-title {
+            font-weight: bold;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .task-text-latest-entry {
+            margin-top: 5px;
+            font-size: 16px;
+            opacity: 0.8;
+            overflow: hidden;
+        }
+
+
+        #sticker-orb {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            z-index: 150;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sticker-orb-face {
+            width: 60px;
+            height: 60px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: grab;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .sticker-orb-face:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+        .sticker-orb-face:active {
+            cursor: grabbing;
+        }
+
+        body:not(.is-mobile).calendar-active #add-task-btn,
+        body:not(.is-mobile).calendar-active #sticker-orb {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        .sticker-display-area {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            display: flex;
+            gap: 5px;
+            z-index: 6; /* Bring stickers to the front */
+        }
+        .sticker-link {
+            font-size: 20px;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+        .sticker-link:hover {
+            transform: scale(1.3);
+        }
+        .task-item.drag-over {
+            border: 2px dashed var(--accent-color);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
+        }
+
+        #sticker-modal-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 300;
+        }
+        .sticker-modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        #sticker-modal-emoji {
+            font-size: 48px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        #sticker-url-input {
+            display: block;
+            width: 250px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        #sticker-modal-save-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .sticker-ghost {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes slide-out-left { to { transform: translateX(-100%); opacity: 0; } }
+        @keyframes slide-in-from-right { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slide-out-right { to { transform: translateX(100%); opacity: 0; } }
+        @keyframes slide-in-from-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- TOAST STYLES --- */
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: rgba(30, 30, 30, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+        }
+        #toast-container.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        #toast-message {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        #toast-message.error {
+            color: #ff8a8a;
+        }
+         #toast-message.syncing {
+            color: #87cefa;
+        }
+        #toast-authorize-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+         #toast-authorize-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- MOBILE-SPECIFIC STYLES --- */
+        #mobile-bottom-bar { display: none; } /* Hide container on desktop */
+
+        body.is-mobile #modal-container {
+            align-items: flex-end;
+        }
+
+        body.is-mobile .modal-content {
+            width: 100%;
+            transform: translateY(100%);
+        }
+
+        body.is-mobile #modal-container.show .modal-content {
+            transform: translateY(0);
+        }
+
+        body.is-mobile .modal-note {
+            border-radius: 20px 20px 0 0;
+            max-height: 85vh;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        body.is-mobile .modal-controls {
+            padding: 10px 20px 20px 20px;
+            margin-top: 0;
+            background-color: #fffc79; /* Match note color */
+        }
+        
+        body.is-mobile #hibernate-btn {
+            background-color: #f5a623;
+        }
+
+        body.is-mobile #confirm-add-btn {
+            width: 100%;
+            border-radius: 12px;
+            height: 50px;
+            margin: 0;
+        }
+
+        body.is-mobile #mobile-bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 25px;
+            /* Add padding for iOS home bar safe area */
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            background: rgba(248, 248, 248, 0.85);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(0,0,0,0.1);
+            z-index: 150;
+        }
+
+        body.is-mobile #add-task-btn,
+        body.is-mobile #sticker-orb {
+            position: static;
+            transform: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        body.is-mobile.calendar-active #add-task-btn,
+        body.is-mobile.calendar-active #sticker-orb {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        body.is-mobile #add-task-btn {
+            width: 55px;
+            height: 55px;
+            font-size: 30px;
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
+        }
+        
+        body.is-mobile .sticker-orb-face {
+            width: 55px;
+            height: 55px;
+            font-size: 28px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        body.is-mobile .header-top-row {
+            justify-content: center;
+        }
+        body.is-mobile header h1 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 0;
+        }
+        body.is-mobile #auth-container {
+            display: none;
+        }
+        body.is-mobile .header-top-row > .view-toggle {
+            display: none;
+        }
+        
+        body.is-mobile #task-list-view,
+        body.is-mobile #calendar-view {
+            /* Add padding to the bottom to not be obscured by the bottom bar */
+            padding-bottom: 100px;
+        }
+
+        body.is-mobile .task-item {
+            height: auto;
+            min-height: 180px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-top-row">
+                <h1 id="header-title"></h1>
+                <!-- GOOGLE SHEETS AUTH CONTAINER -->
+                <div id="auth-container">
+                </div>
+                <div id="view-toggle" class="view-toggle" title="Switch View">
+                    <div class="toggle-option active" data-view="list">📋</div>
+                    <div class="toggle-option" data-view="calendar">🗓️</div>
+                    <div class="toggle-thumb"></div>
+                </div>
+            </div>
+            <div id="filter-bar-container">
+                <div id="filter-bar"></div>
+            </div>
+        </header>
+        <main id="task-list-view"></main>
+        <section id="calendar-view">
+            <div class="calendar-grid-container">
+                <div class="calendar-weekdays"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+                <div id="calendar-wrapper">
+                    <div id="calendar-slider">
+                        <div id="prev-month-grid" class="calendar-month-grid"></div>
+                        <div id="current-month-grid" class="calendar-month-grid"></div>
+                        <div id="next-month-grid" class="calendar-month-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <button id="add-task-btn">+</button>
+        <div id="sticker-orb">
+            <div class="sticker-orb-face">📌</div>
+        </div>
+    </div>
+    <div id="modal-container">
+        <div class="modal-content">
+            <form id="task-form">
+                <div class="modal-note">
+                    <div id="modal-note-content">
+                        <textarea id="task-title-input" placeholder="Task Title..." rows="1" enterkeyhint="done"></textarea>
+                        <div id="daily-entries-wrapper"></div>
+                    </div>
+                    <div id="modal-note-footer">
+                        <div class="tag-section-modal">
+                            <h3 class="tag-title-modal">People</h3>
+                            <div id="people-chip-container" class="chip-container"></div>
+                        </div>
+                         <div class="tag-section-modal">
+                            <h3 class="tag-title-modal">Modules</h3>
+                            <div id="module-chip-container" class="chip-container"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-controls">
+                    <button id="hibernate-btn" class="modal-btn" type="button">💤</button>
+                    <button id="confirm-add-btn" class="modal-btn" type="submit">&#10003;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="sticker-modal-container">
+        <div class="sticker-modal-content">
+            <h2 id="sticker-modal-emoji"></h2>
+            <input type="url" id="sticker-url-input" placeholder="https://example.com">
+            <button id="sticker-modal-save-btn">Save Link</button>
+        </div>
+    </div>
+
+    <div id="toast-container">
+        <span id="toast-message"></span>
+        <button id="toast-authorize-btn" style="display: none;">Sign In</button>
+    </div>
+
+    <!-- GOOGLE API SCRIPTS -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
+    <script>
+    // --- IIFE Wrapper ---
+    // This function wrapper encapsulates the entire application logic,
+    // preventing variables from leaking into the global scope.
+    (function() {
+        // --- GOOGLE SHEETS API CONFIG ---
+        // !!! IMPORTANT SECURITY WARNING !!!
+        // Exposing API Keys and Client IDs in client-side JavaScript is a major security risk.
+        // Anyone can view your source code and steal these credentials, potentially leading to
+        // unauthorized access and misuse of your Google Cloud project and billing.
+        //
+        // FOR PRODUCTION: This authentication logic MUST be handled on a secure server-side backend.
+        // The client should only communicate with your server, which then makes authenticated
+        // requests to the Google Sheets API.
+         
+        const API_KEY = ''; // Your Google API Key
+        const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
+        const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
+           
+       /*
+        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
+        const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
+        const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
+         */
+
+        // This flag determines which mode the app runs in.
+        const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
+        const isMobileDevice = /Mobi/i.test(navigator.userAgent);
+
+        // --- GLOBAL APP STATE & VARIABLES ---
+        let gapiInited = false;
+        let gisInited = false;
+        let tokenClient;
+        let isAuthorized = false;
+
+        // DOM element references, populated on DOMContentLoaded
+        let toastContainerEl, toastMessageEl, toastAuthorizeBtn;
+        let toastTimeout = null;
+
+        let tasks = [];
+        let allTags = { people: [], modules: [] };
+        const noteColors = ['#fffc79', '#a0e7e5', '#f0a8a8', '#b4f8c8', '#fdc7b5'];
+        let calendarDate = new Date();
+        let currentView = 'list';
+        let editingTaskId = null;
+        let activeFilterTag = null;
+
+        let currentStickerDrop = null;
+        let isDraggingSticker = false;
+        let draggedStickerGhost = null;
+        let lastTouchTarget = null;
+        let writeTimeout = null;
+        
+        let isKeyboardVisible = false;
+        let modalJustOpened = false;
+        
+        // --- GOOGLE API & AUTH FUNCTIONS (Attached to window for onload) ---
+        window.gapiLoaded = () => {
+            gapi.load('client', initializeGapiClient);
+        }
+
+        window.gisLoaded = () => {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/spreadsheets',
+                callback: gapiClientCallback, // This callback handles token responses
+            });
+            gisInited = true;
+            tryAppInitialization();
+        }
+
+        const initializeGapiClient = async () => {
+            await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"] });
+            gapiInited = true;
+            tryAppInitialization();
+        };
+
+        const gapiClientCallback = (resp) => {
+            if (resp.error) {
+                console.log('Silent auth failed or user is signed out:', resp.error);
+                updateSigninStatus(false);
+                return;
+            }
+            updateSigninStatus(true);
+        };
+
+        const handleAuthClick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
+
+        const updateSigninStatus = (isSignedIn) => {
+            isAuthorized = isSignedIn;
+            if (isAuthorized) {
+                toastContainerEl.classList.remove('show'); // Hide sign-in prompt
+                setStatus('Connected');
+                loadData();
+            } else {
+                // This state is reached if using G-Sheets and sign-in fails or user signs out
+                toastMessageEl.textContent = 'Sync to Google Sheets';
+                toastMessageEl.className = 'toast-message'; // Reset classes
+                toastAuthorizeBtn.style.display = 'block';
+                toastContainerEl.classList.add('show');
+                clearTimeout(toastTimeout); // Make it persistent
+
+                tasks = [];
+                allTags = { people: [], modules: [] };
+                renderCurrentView();
+            }
+        };
+
+        const setStatus = (message, isError = false) => {
+            if (!toastMessageEl || !toastContainerEl) return;
+
+            clearTimeout(toastTimeout);
+            toastAuthorizeBtn.style.display = 'none'; // Always hide button for temporary statuses
+            toastMessageEl.textContent = message;
+            
+            toastMessageEl.className = 'toast-message'; // Reset classes before adding new ones
+            if (isError) toastMessageEl.classList.add('error');
+            if (['Syncing...', 'Saving...', 'Reading data...'].includes(message)) {
+                toastMessageEl.classList.add('syncing');
+            }
+
+            toastContainerEl.classList.add('show');
+
+            // Set timeout to hide the toast
+            toastTimeout = setTimeout(() => {
+                toastContainerEl.classList.remove('show');
+            }, 3000);
+        }
+
+        const tryAppInitialization = () => {
+            if (useGoogleSheets && gapiInited && gisInited) {
+                tokenClient.requestAccessToken({ prompt: 'none' });
+            }
+        }
+
+        // --- DATA HANDLING ---
+        const loadData = async () => {
+            if (useGoogleSheets) {
+                if (isAuthorized) {
+                   await readFromSheet();
+                }
+            } else {
+                // Fallback to local storage with updated, more realistic placeholder data
+                const storedTasks = localStorage.getItem('tasks');
+                if (storedTasks) {
+                    tasks = JSON.parse(storedTasks);
+                } else {
+                    const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    const tenDaysAgo = new Date(); tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+                    const fiveDaysAgo = new Date(); fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+                    tasks = [{
+                        id: 99999,
+                        title: 'Project Alpha design phase',
+                        content: {
+                            [toYYYYMMDD(thirtyDaysAgo)]: "Initial research and mood board creation.",
+                            [toYYYYMMDD(tenDaysAgo)]: "Finalized the color palette and typography.",
+                            [toYYYYMMDD(fiveDaysAgo)]: "Completed wireframes for the main dashboard."
+                        },
+                        createdAt: thirtyDaysAgo.toISOString(),
+                        completedAt: fiveDaysAgo.toISOString(),
+                        archived: false,
+                        tags: { people: ['Alice'], modules: ['API'] },
+                        stickers: []
+                    }];
+                }
+                tasks.forEach(parseTaskHibernation); // Parse on load
+                allTags = JSON.parse(localStorage.getItem('allTags')) || { people: ['Alice', 'Bob'], modules: ['Frontend', 'API', 'Database'] };
+                renderCurrentView();
+            }
+        };
+
+        const saveData = () => {
+             if (useGoogleSheets) {
+                if (isAuthorized) {
+                    setStatus('Syncing...');
+                    clearTimeout(writeTimeout);
+                    writeTimeout = setTimeout(async () => {
+                        await writeToSheet();
+                    }, 2000);
+                }
+            } else {
+                // Before saving, put hibernation data back into content
+                const tasksToSave = tasks.map(prepareTaskForSaving);
+                localStorage.setItem('tasks', JSON.stringify(tasksToSave));
+                localStorage.setItem('allTags', JSON.stringify(allTags));
+            }
+        };
+        
+        const parseTaskHibernation = (task) => {
+            if (task.content && task.content._hibernation) {
+                task.hibernationPeriods = task.content._hibernation;
+                delete task.content._hibernation;
+            } else {
+                task.hibernationPeriods = [];
+            }
+        };
+
+        const prepareTaskForSaving = (task) => {
+            const taskCopy = JSON.parse(JSON.stringify(task)); // Deep copy
+            if (taskCopy.hibernationPeriods && taskCopy.hibernationPeriods.length > 0) {
+                if (!taskCopy.content) taskCopy.content = {};
+                taskCopy.content._hibernation = taskCopy.hibernationPeriods;
+            }
+            delete taskCopy.hibernationPeriods; // Remove from top level before saving
+            return taskCopy;
+        };
+
+
+        const readFromSheet = async () => {
+            setStatus('Reading data...');
+            try {
+                const response = await gapi.client.sheets.spreadsheets.values.batchGet({
+                    spreadsheetId: SPREADSHEET_ID,
+                    ranges: ['tasks!A:H', 'tags!A:B'],
+                });
+
+                const taskValueRange = response.result.valueRanges && response.result.valueRanges[0];
+                const tagValueRange = response.result.valueRanges && response.result.valueRanges[1];
+
+                const taskRows = (taskValueRange && taskValueRange.values) || [];
+                const tagRows = (tagValueRange && tagValueRange.values) || [];
+
+                const parsedTasks = [];
+                if (taskRows.length > 1) {
+                    taskRows.slice(1).forEach((row, index) => {
+                        try {
+                            if (!Array.isArray(row)) { return; }
+                            const task = {
+                                id: parseInt(row[0], 10),
+                                title: row[1] || 'Untitled Task',
+                                content: JSON.parse(row[2] || '{}'),
+                                createdAt: row[3],
+                                completedAt: row[4] || null,
+                                archived: row[5] === 'TRUE',
+                                tags: JSON.parse(row[6] || '{}'),
+                                stickers: JSON.parse(row[7] || '[]')
+                            };
+                            if (isNaN(task.id) || !task.createdAt) { return; }
+                            parseTaskHibernation(task);
+                            parsedTasks.push(task);
+                        } catch (e) {
+                            console.error(`Error parsing row ${index + 2} from 'tasks' sheet:`, e);
+                        }
+                    });
+                }
+                tasks = parsedTasks;
+
+                const parsedTags = { people: [], modules: [] };
+                if (tagRows.length > 1) {
+                    tagRows.slice(1).forEach((row, index) => {
+                        try {
+                            if (!Array.isArray(row) || row.length < 2) { return; }
+                            const [category, tag] = row;
+                            if (category && tag && parsedTags.hasOwnProperty(category)) {
+                                parsedTags[category].push(tag);
+                            }
+                        } catch (e) {
+                             console.error(`Error parsing row ${index + 2} from 'tags' sheet:`, e);
+                        }
+                    });
+                }
+                allTags = parsedTags;
+                setStatus('Data loaded');
+            } catch (err) {
+                console.error('Error reading from sheet:', err);
+                setStatus('Read Error', true);
+            }
+            renderCurrentView();
+        };
+
+        const writeToSheet = async () => {
+            setStatus('Saving...');
+            try {
+                // Prepare tasks for saving by embedding hibernation data
+                const tasksToSave = tasks.map(prepareTaskForSaving);
+                const taskValues = tasksToSave.map(t => [
+                    t.id, t.title, JSON.stringify(t.content), t.createdAt, t.completedAt, t.archived, JSON.stringify(t.tags), JSON.stringify(t.stickers)
+                ]);
+
+                const tagValues = [];
+                Object.keys(allTags).forEach(category => {
+                    allTags[category].forEach(tag => tagValues.push([category, tag]));
+                });
+
+                const data = [
+                    { range: 'tasks!A1', values: [['ID', 'Title', 'ContentJSON', 'CreatedAt', 'CompletedAt', 'Archived', 'TagsJSON', 'StickersJSON'], ...taskValues] },
+                    { range: 'tags!A1', values: [['Category', 'Tag'], ...tagValues] }
+                ];
+
+                await gapi.client.sheets.spreadsheets.values.batchClear({ spreadsheetId: SPREADSHEET_ID, ranges: ['tasks', 'tags'] });
+                await gapi.client.sheets.spreadsheets.values.batchUpdate({ spreadsheetId: SPREADSHEET_ID, valueInputOption: 'USER_ENTERED', data: data });
+
+                setStatus('Saved');
+            } catch (err) {
+                console.error('Error writing to sheet:', err);
+                setStatus('Save Error', true);
+            }
+        };
+
+        // --- CORE APP LOGIC & RENDER FUNCTIONS ---
+        const isTaskHibernated = (task) => {
+            if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) {
+                return false;
+            }
+            const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
+            return !lastPeriod.end;
+        };
+        
+        const getTaskStatus = (task) => {
+            if (task.completedAt) return 2; // Completed
+            if (isTaskHibernated(task)) return 1; // Hibernated
+            return 0; // Active
+        };
+        
+        const sortTasks = () => {
+            tasks.sort((a, b) => {
+                const statusA = getTaskStatus(a);
+                const statusB = getTaskStatus(b);
+        
+                if (statusA !== statusB) {
+                    return statusA - statusB; // Active (0) < Hibernated (1) < Completed (2)
+                }
+        
+                // If statuses are the same, sort by date
+                if (statusA === 2) { // Both completed
+                    return new Date(b.completedAt) - new Date(a.completedAt);
+                } else { // Both active or both hibernated
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                }
+            });
+        };
+
+        const renderCurrentView = () => {
+            if(currentView === 'list') {
+                renderTasks();
+            } else {
+                renderCalendar();
+            }
+        };
+
+        const startOfDay = (d) => { const date = new Date(d); date.setHours(0, 0, 0, 0); return date; };
+        const toYYYYMMDD = (d) => {
+            const year = d.getFullYear();
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        const getFilteredTasks = () => {
+            if (!activeFilterTag) return tasks;
+            return tasks.filter(task => {
+                const allTaskTags = [...(task.tags?.people || []), ...(task.tags?.modules || [])];
+                return allTaskTags.includes(activeFilterTag);
+            });
+        };
+        const getRelativeTime = (dateString) => {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) return 'today';
+            if (diffDays === 1) return 'yesterday';
+            return `${diffDays} days ago`;
+        };
+        const autoGrow = (element) => {
+            element.style.height = 'auto';
+            element.style.height = (element.scrollHeight) + 'px';
+        };
+
+        const renderFilterBar = () => {
+            const filterBar = document.getElementById('filter-bar');
+            const tagCounts = {};
+
+            tasks.filter(t => !t.archived).forEach(task => {
+                const allTaskTags = [...(task.tags?.people || []), ...(task.tags?.modules || [])];
+                allTaskTags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            });
+
+            const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
+            filterBar.innerHTML = '';
+
+            sortedTags.forEach(tag => {
+                const chip = document.createElement('div');
+                chip.className = 'filter-chip';
+                chip.textContent = tag;
+                chip.dataset.tag = tag;
+                if (activeFilterTag === tag) chip.classList.add('active');
+                filterBar.appendChild(chip);
+            });
+        };
+
+        const renderTasks = (animateLayout = false, newTaskId = null, editedTaskId = null) => {
+            const taskListView = document.getElementById('task-list-view');
+            const firstPositions = new Map();
+            if (animateLayout) {
+                // Before re-rendering, capture each card's position AND its current rotation value.
+                taskListView.querySelectorAll('.task-item').forEach(el => {
+                    const style = window.getComputedStyle(el);
+                    firstPositions.set(el.dataset.id, {
+                        rect: el.getBoundingClientRect(),
+                        rotation: style.getPropertyValue('--rotation-deg')
+                    });
+                });
+            }
+
+            sortTasks();
+            renderFilterBar();
+            taskListView.innerHTML = '';
+            const filteredTasks = getFilteredTasks();
+            const visibleTasks = filteredTasks.filter(task => !task.archived);
+            visibleTasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                if (task.completedAt) taskItem.classList.add('completed');
+                if (isTaskHibernated(task)) taskItem.classList.add('hibernated');
+
+                if (newTaskId && newTaskId === task.id) {
+                    taskItem.classList.add('new-note-animation');
+                }
+                
+                if (editedTaskId && editedTaskId === task.id) {
+                    taskItem.classList.add('task-edited-animation');
+                    taskItem.addEventListener('animationend', () => {
+                        taskItem.classList.remove('task-edited-animation');
+                    }, { once: true });
+                }
+
+                taskItem.dataset.id = task.id;
+                taskItem.style.backgroundColor = noteColors[task.id % noteColors.length];
+                const rotation = (index % 2 === 0 ? 1.5 : -1.5);
+                const startRotation = (rotation > 0) ? -10 : 10;
+                taskItem.style.setProperty('--rotation-deg', `${rotation}deg`);
+                taskItem.style.setProperty('--start-rotation-deg', `${startRotation}deg`);
+
+                const taskContent = document.createElement('div');
+                taskContent.className = 'task-content';
+
+                const timeAgo = document.createElement('div');
+                timeAgo.className = 'time-ago';
+
+                const archiveBtn = document.createElement('button');
+                archiveBtn.className = 'archive-btn';
+                archiveBtn.onclick = () => archiveTask(task.id);
+
+                if (task.completedAt) {
+                    const completionDate = new Date(task.completedAt);
+                    timeAgo.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    const creationDate = new Date(task.createdAt);
+                    const daysTaken = Math.max(1, Math.ceil((completionDate - creationDate) / (1000 * 60 * 60 * 24)));
+                    archiveBtn.innerHTML = `<div>&#10003;</div><div class="days-to-complete">Took ${daysTaken} day${daysTaken !== 1 ? 's' : ''}</div>`;
+                } else if (isTaskHibernated(task)) {
+                     timeAgo.textContent = `Hibernated`;
+                }
+                else {
+                    timeAgo.textContent = getRelativeTime(task.createdAt);
+                    archiveBtn.innerHTML = '&#10003;';
+                }
+                taskContent.appendChild(timeAgo);
+
+                const textDisplay = document.createElement('div');
+                textDisplay.className = 'task-text-display';
+
+                const titleDisplay = document.createElement('div');
+                titleDisplay.className = 'task-text-title';
+                titleDisplay.textContent = task.title || 'Untitled Task';
+                textDisplay.appendChild(titleDisplay);
+
+                if (task.content) {
+                    const contentKeys = Object.keys(task.content).sort().reverse();
+                    if (contentKeys.length > 0) {
+                        const latestEntryText = task.content[contentKeys[0]];
+                        const latestEntryDisplay = document.createElement('div');
+                        latestEntryDisplay.className = 'task-text-latest-entry';
+                        latestEntryDisplay.textContent = latestEntryText;
+                        textDisplay.appendChild(latestEntryDisplay);
+                    }
+                }
+                taskContent.appendChild(textDisplay);
+
+                const tagsContainer = document.createElement('div');
+                tagsContainer.className = 'task-tags-container';
+                if (task.tags) {
+                    const allTaskTags = [...(task.tags.people || []), ...(task.tags.modules || [])];
+                    allTaskTags.forEach(tagText => {
+                        const tagEl = document.createElement('span');
+                        tagEl.className = 'task-tag';
+                        tagEl.textContent = tagText;
+                        tagsContainer.appendChild(tagEl);
+                    });
+                }
+                taskItem.appendChild(taskContent);
+                taskItem.appendChild(tagsContainer);
+
+                const stickerDisplay = document.createElement('div');
+                stickerDisplay.className = 'sticker-display-area';
+                if (task.stickers) {
+                    task.stickers.forEach(sticker => {
+                        const stickerLink = document.createElement('a');
+                        stickerLink.className = 'sticker-link';
+                        stickerLink.textContent = sticker.emoji;
+                        stickerLink.href = sticker.url;
+                        stickerLink.target = '_blank';
+                        stickerLink.onclick = (e) => e.stopPropagation();
+                        stickerDisplay.appendChild(stickerLink);
+                    });
+                }
+                if (isTaskHibernated(task)) {
+                    const hibernateIcon = document.createElement('div');
+                    hibernateIcon.textContent = '💤';
+                    hibernateIcon.style.fontSize = '20px';
+                    stickerDisplay.appendChild(hibernateIcon);
+                }
+                taskItem.appendChild(stickerDisplay);
+
+                const uncompletePlaceholder = document.createElement('div');
+                uncompletePlaceholder.className = 'uncomplete-placeholder';
+                uncompletePlaceholder.innerHTML = '&#8634;';
+
+                taskItem.appendChild(uncompletePlaceholder);
+                taskItem.appendChild(archiveBtn);
+                taskListView.appendChild(taskItem);
+            });
+
+            if (animateLayout) {
+                const elementsToAnimate = [];
+
+                taskListView.querySelectorAll('.task-item:not(.new-note-animation)').forEach(el => {
+                    const id = el.dataset.id;
+                    const first = firstPositions.get(id); // This is now an object: { rect, rotation }
+                    if (first) {
+                        const last = el.getBoundingClientRect();
+                        const deltaX = first.rect.left - last.left;
+                        const deltaY = first.rect.top - last.top;
+                        
+                        const newRotation = window.getComputedStyle(el).getPropertyValue('--rotation-deg');
+
+                        // Only animate if position OR rotation has changed.
+                        if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1 || first.rotation.trim() !== newRotation.trim()) {
+                             elementsToAnimate.push({ el, deltaX, deltaY, oldRotation: first.rotation, newRotation });
+                        }
+                    }
+                });
+
+                // INVERT: Before the browser can paint, instantly move elements to their old positions and rotations.
+                elementsToAnimate.forEach(({ el, deltaX, deltaY, oldRotation }) => {
+                    el.style.transition = 'none';
+                    // Apply the original rotation along with the positional translation.
+                    el.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${oldRotation})`;
+                });
+                
+                // Force the browser to apply the INVERT styles before we proceed.
+                void taskListView.offsetWidth;
+
+                // PLAY: After the 150ms delay, animate the cards to their final position and rotation.
+                setTimeout(() => {
+                    elementsToAnimate.forEach(({ el, newRotation }) => {
+                        // Apply the transition and animate to the new rotation.
+                        // The translate() part implicitly animates to 0.
+                        el.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                        el.style.transform = `rotate(${newRotation})`;
+
+                        // After the animation finishes, clean up the inline styles.
+                        el.addEventListener('transitionend', (e) => {
+                            if (e.propertyName === 'transform') {
+                                el.style.transition = '';
+                                el.style.transform = ''; // Clear the inline transform so CSS can take over again.
+                            }
+                        }, { once: true });
+                    });
+                }, 150);
+            }
+        };
+
+        const renderChipSection = (container, tags, category) => {
+            container.innerHTML = '';
+            tags.forEach(tag => { const chip = document.createElement('div'); chip.className = 'chip'; chip.textContent = tag; chip.dataset.tag = tag; container.appendChild(chip); });
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button'; // Explicitly set type to prevent form submission
+            addBtn.id = `add-${category}-tag-btn`; 
+            addBtn.textContent = '+'; 
+            addBtn.className = 'add-tag-btn'; 
+            container.appendChild(addBtn);
+        };
+
+        const renderAllChips = () => {
+            const peopleChipContainer = document.getElementById('people-chip-container');
+            const moduleChipContainer = document.getElementById('module-chip-container');
+            renderChipSection(peopleChipContainer, allTags.people, 'people');
+            renderChipSection(moduleChipContainer, allTags.modules, 'modules');
+        };
+
+        const prepareLoadingState = (targetGrid, dateForMonth) => {
+            targetGrid.innerHTML = `<div class="loading-text">Loading ${dateForMonth.toLocaleDateString('en-US', { month: 'long' })} Tasks</div>`;
+        };
+
+        const isDateInHibernation = (date, task) => {
+            if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) return false;
+            const checkDate = startOfDay(date).getTime();
+            
+            for (const period of task.hibernationPeriods) {
+                const startDate = startOfDay(new Date(period.start + 'T00:00:00')).getTime();
+                const endDate = period.end ? startOfDay(new Date(period.end + 'T00:00:00')).getTime() : Infinity;
+                if (checkDate >= startDate && checkDate < endDate) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        const renderSingleMonth = (targetGrid, dateForMonth, tasksForCalendar) => {
+            targetGrid.innerHTML = '';
+            const gridContentWrapper = document.createElement('div');
+            gridContentWrapper.className = 'day-grid-wrapper';
+
+            const today = startOfDay(new Date());
+            const month = dateForMonth.getMonth();
+            const year = dateForMonth.getFullYear();
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const viewStartDate = new Date(firstDayOfMonth);
+            viewStartDate.setDate(viewStartDate.getDate() - viewStartDate.getDay());
+            const viewEndDate = new Date(lastDayOfMonth);
+            viewEndDate.setDate(viewEndDate.getDate() + (6 - viewEndDate.getDay()));
+            let firstPassSlots = new Map();
+            const numWeeks = Math.ceil((viewEndDate - viewStartDate) / (86400000 * 7));
+            let rowMaxSlots = Array(numWeeks).fill(0);
+
+            tasksForCalendar.forEach(task => {
+                const taskStart = startOfDay(new Date(task.createdAt));
+                const taskEnd = task.completedAt ? startOfDay(new Date(task.completedAt)) : today;
+                if (taskEnd < viewStartDate || taskStart > viewEndDate) return;
+                let slot = 0;
+                while (true) {
+                    let isTaken = false;
+                    for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
+                         if (isDateInHibernation(d, task)) continue;
+                        const dateStr = toYYYYMMDD(d);
+                        if (firstPassSlots.has(dateStr) && firstPassSlots.get(dateStr).includes(slot)) {
+                            isTaken = true; break;
+                        }
+                    }
+                    if (!isTaken) break;
+                    slot++;
+                }
+                for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
+                     if (isDateInHibernation(d, task)) continue;
+                    const dateStr = toYYYYMMDD(d);
+                    if (!firstPassSlots.has(dateStr)) firstPassSlots.set(dateStr, []);
+                    firstPassSlots.get(dateStr).push(slot);
+                    if (d >= viewStartDate && d <= viewEndDate) {
+                        const timeDiff = d.getTime() - viewStartDate.getTime();
+                        const dayDiff = Math.floor(timeDiff / 86400000);
+                        const rowIndex = Math.floor(dayDiff / 7);
+                        if(rowMaxSlots[rowIndex] !== undefined) {
+                            rowMaxSlots[rowIndex] = Math.max(rowMaxSlots[rowIndex], slot + 1);
+                        }
+                    }
+                }
+            });
+
+            const baseRowHeight = 120;
+            const taskBarHeight = 28;
+            const rowHeights = [];
+            const rowOffsets = [0];
+            let totalHeight = 0;
+
+            rowMaxSlots.forEach((maxSlots, i) => {
+                let rowHeight = baseRowHeight;
+                if (maxSlots > 3) rowHeight += (maxSlots - 3) * taskBarHeight;
+                rowHeights.push(rowHeight);
+                totalHeight += rowHeight;
+                if (i < rowMaxSlots.length - 1) rowOffsets.push(totalHeight);
+            });
+
+            gridContentWrapper.style.gridTemplateRows = rowHeights.map(h => `${h}px`).join(' ');
+
+            let dateCellMap = new Map();
+            for (let d = new Date(viewStartDate); d <= viewEndDate; d.setDate(d.getDate() + 1)) {
+                const date = new Date(d);
+                const isOtherMonth = date.getMonth() !== month;
+                const isToday = date.getTime() === today.getTime();
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                if(isOtherMonth) cell.classList.add('other-month');
+                if(isToday) cell.classList.add('today');
+                cell.dataset.date = toYYYYMMDD(date);
+                cell.innerHTML = `<div class="day-number">${date.getDate()}</div>`;
+                gridContentWrapper.appendChild(cell);
+                dateCellMap.set(toYYYYMMDD(date), cell);
+            }
+
+            let dailySlots = new Map();
+            tasksForCalendar.forEach(task => {
+                const taskStart = startOfDay(new Date(task.createdAt));
+                const taskEnd = task.completedAt ? startOfDay(new Date(task.completedAt)) : today;
+                if (taskEnd < viewStartDate || taskStart > viewEndDate) return;
+                let slot = 0;
+                while (true) {
+                    let isTaken = false;
+                    for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
+                        if (isDateInHibernation(d, task)) continue;
+                        const dateStr = toYYYYMMDD(d);
+                        if (dailySlots.has(dateStr) && dailySlots.get(dateStr).includes(slot)) {
+                            isTaken = true; break;
+                        }
+                    }
+                    if (!isTaken) break;
+                    slot++;
+                }
+                for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
+                    if (isDateInHibernation(d, task)) continue;
+                    const dateStr = toYYYYMMDD(d);
+                    if (!dailySlots.has(dateStr)) dailySlots.set(dateStr, []);
+                    dailySlots.get(dateStr).push(slot);
+                }
+
+                let currentBarStart = null;
+                for (let d = new Date(taskStart); d <= taskEnd; d.setDate(d.getDate() + 1)) {
+                    if (isDateInHibernation(d, task)) {
+                        if (currentBarStart) { // A bar segment was active and now ends
+                            drawBarSegment(currentBarStart, new Date(d.getTime() - 86400000));
+                            currentBarStart = null;
+                        }
+                    } else {
+                        if (!currentBarStart) { // A new bar segment starts
+                            currentBarStart = new Date(d);
+                        }
+                    }
+                }
+                if (currentBarStart) { // Draw the final segment
+                    drawBarSegment(currentBarStart, taskEnd);
+                }
+
+                function drawBarSegment(start, end) {
+                    let segmentStart = new Date(start > viewStartDate ? start : viewStartDate);
+                    while(segmentStart <= end && segmentStart <= viewEndDate) {
+                        const dayOfWeek = segmentStart.getDay();
+                        const timeDiff = segmentStart.getTime() - viewStartDate.getTime();
+                        const dayDiff = Math.floor(timeDiff / 86400000);
+                        const rowIndex = Math.floor(dayDiff / 7);
+                        const endOfWeek = new Date(segmentStart);
+                        endOfWeek.setDate(endOfWeek.getDate() + (6 - dayOfWeek));
+                        const barEndDate = end < endOfWeek ? end : endOfWeek;
+                        if(barEndDate < viewStartDate) {
+                            segmentStart.setDate(segmentStart.getDate() + 7);
+                            continue;
+                        }
+                        const span = (barEndDate.getTime() - segmentStart.getTime()) / 86400000 + 1;
+                        const taskBar = document.createElement('div');
+                        taskBar.className = 'task-bar';
+                        taskBar.textContent = task.title;
+                        taskBar.style.backgroundColor = noteColors[task.id % noteColors.length].replace('79', 'b3');
+                        if (segmentStart.getDay() === 0 && (start < segmentStart || isDateInHibernation(new Date(segmentStart.getTime() - 86400000), task))) {
+                            const prevIndicator = document.createElement('span');
+                            prevIndicator.className = 'task-continuation-indicator prev';
+                            prevIndicator.textContent = '‹';
+                            taskBar.appendChild(prevIndicator);
+                            taskBar.classList.add('has-prev-indicator');
+                        }
+                        if (barEndDate.getDay() === 6 && (end > barEndDate || isDateInHibernation(new Date(barEndDate.getTime() + 86400000), task))) {
+                            const nextIndicator = document.createElement('span');
+                            nextIndicator.className = 'task-continuation-indicator next';
+                            nextIndicator.textContent = '›';
+                            taskBar.appendChild(nextIndicator);
+                            taskBar.classList.add('has-next-indicator');
+                        }
+                        taskBar.style.top = `${rowOffsets[rowIndex] + 40 + slot * 28}px`;
+                        taskBar.style.left = `calc(${(dayOfWeek / 7) * 100}% + 2px)`;
+                        taskBar.style.width = `calc(${(span / 7) * 100}% - 4px)`;
+                        taskBar.onclick = () => showModal(task);
+                        gridContentWrapper.appendChild(taskBar);
+                        segmentStart.setDate(segmentStart.getDate() + span);
+                    }
+                }
+            });
+            targetGrid.appendChild(gridContentWrapper);
+            return gridContentWrapper;
+        };
+
+        const renderCalendar = () => {
+            renderFilterBar();
+            const slider = document.getElementById('calendar-slider');
+            slider.style.transition = 'none';
+            slider.style.transform = 'translateX(-33.3333%)';
+            const tasksToRender = getFilteredTasks();
+            renderSingleMonth(document.getElementById('current-month-grid'), calendarDate, tasksToRender);
+            const prevDate = new Date(calendarDate);
+            prevDate.setMonth(prevDate.getMonth() - 1);
+            const nextDate = new Date(calendarDate);
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            prepareLoadingState(document.getElementById('prev-month-grid'), prevDate);
+            prepareLoadingState(document.getElementById('next-month-grid'), nextDate);
+            setTimeout(() => { slider.style.transition = ''; }, 50);
+        };
+
+        const showModal = (task = null) => {
+            history.pushState({ modalOpen: true }, 'modal'); // Add history state for back button handling
+            document.body.classList.add('modal-open');
+            modalJustOpened = true;
+
+            const modalContainer = document.getElementById('modal-container');
+            const taskTitleInput = document.getElementById('task-title-input');
+            const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
+            const peopleChipContainer = document.getElementById('people-chip-container');
+            const moduleChipContainer = document.getElementById('module-chip-container');
+            const hibernateBtn = document.getElementById('hibernate-btn');
+            
+            const handleFocus = (e) => {
+                isKeyboardVisible = true;
+                setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            };
+
+            const handleBlur = () => {
+                isKeyboardVisible = false;
+            };
+
+            taskTitleInput.addEventListener('focus', handleFocus);
+            taskTitleInput.addEventListener('blur', handleBlur);
+
+            editingTaskId = task ? task.id : null;
+            renderAllChips();
+
+            if (task) {
+                if(task.tags) {
+                    peopleChipContainer.querySelectorAll('.chip').forEach(chip => { if (task.tags.people?.includes(chip.dataset.tag)) chip.classList.add('selected'); });
+                    moduleChipContainer.querySelectorAll('.chip').forEach(chip => { if (task.tags.modules?.includes(chip.dataset.tag)) chip.classList.add('selected'); });
+                }
+                hibernateBtn.style.display = 'block';
+                if(isTaskHibernated(task)) {
+                    hibernateBtn.textContent = '☀️';
+                    hibernateBtn.title = 'Wake Up Task';
+                } else {
+                    hibernateBtn.textContent = '💤';
+                    hibernateBtn.title = 'Hibernate Task';
+                }
+            } else {
+                 hibernateBtn.style.display = 'none';
+            }
+
+            taskTitleInput.value = task ? task.title : '';
+            dailyEntriesWrapper.innerHTML = '';
+
+            const todayStr = toYYYYMMDD(new Date());
+            const contentEntries = task ? { ...task.content } : {};
+
+            if (!contentEntries[todayStr]) {
+                contentEntries[todayStr] = '';
+            }
+
+            const sortedDates = Object.keys(contentEntries).sort().reverse();
+
+            sortedDates.forEach(dateStr => {
+                const entryContainer = document.createElement('div');
+                entryContainer.className = 'daily-entry-container';
+
+                const dateObj = new Date(dateStr + 'T00:00:00'); // Treat as local time
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'daily-entry-date';
+                dateHeader.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                entryContainer.appendChild(dateHeader);
+
+                const textarea = document.createElement('textarea');
+                textarea.className = 'daily-entry-textarea';
+                textarea.placeholder = 'Add a note for today...';
+                textarea.dataset.date = dateStr;
+                textarea.value = contentEntries[dateStr];
+                textarea.addEventListener('input', () => autoGrow(textarea));
+                textarea.addEventListener('focus', handleFocus);
+                textarea.addEventListener('blur', handleBlur);
+                entryContainer.appendChild(textarea);
+
+                dailyEntriesWrapper.appendChild(entryContainer);
+                autoGrow(textarea);
+            });
+
+            setTimeout(() => autoGrow(taskTitleInput), 0);
+
+            modalContainer.style.display = 'flex';
+            setTimeout(() => {
+                modalContainer.classList.add('show');
+                const todayTextarea = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
+
+                if (task && todayTextarea) { // If editing an existing task, focus today's note
+                    todayTextarea.focus();
+                    todayTextarea.setSelectionRange(todayTextarea.value.length, todayTextarea.value.length);
+
+                    // Add a temporary highlight effect
+                    todayTextarea.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
+                    setTimeout(() => {
+                        if(todayTextarea) todayTextarea.style.backgroundColor = 'transparent';
+                    }, 1500);
+                } else { // Otherwise, focus the title for a new task
+                    taskTitleInput.focus();
+                }
+            }, 10);
+
+            // Set a flag to ignore clicks for a very short duration, preventing the opening click
+            // from also triggering a close.
+            setTimeout(() => { modalJustOpened = false; }, 50);
+        };
+
+        const hideModal = () => {
+            document.body.classList.remove('modal-open');
+
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.classList.remove('show');
+            
+            const onTransitionEnd = () => {
+                modalContainer.style.display = 'none';
+                const taskTitleInput = document.getElementById('task-title-input');
+                const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
+                taskTitleInput.value = '';
+                taskTitleInput.style.height = 'auto';
+                dailyEntriesWrapper.innerHTML = '';
+                editingTaskId = null;
+                modalContainer.removeEventListener('transitionend', onTransitionEnd);
+            };
+
+            modalContainer.addEventListener('transitionend', onTransitionEnd);
+        };
+
+        const showStickerModal = (taskId, emoji) => {
+            currentStickerDrop = { taskId, emoji };
+            document.getElementById('sticker-modal-emoji').textContent = emoji;
+            document.getElementById('sticker-modal-container').style.display = 'flex';
+            document.getElementById('sticker-url-input').value = '';
+            document.getElementById('sticker-url-input').focus();
+        };
+
+        const hideStickerModal = () => {
+            document.getElementById('sticker-modal-container').style.display = 'none';
+            currentStickerDrop = null;
+        };
+
+        const saveSticker = () => {
+            if (!currentStickerDrop) return;
+            const { taskId, emoji } = currentStickerDrop;
+            const url = document.getElementById('sticker-url-input').value.trim();
+            if (!url) return;
+
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                if (!task.stickers) task.stickers = [];
+                if (task.stickers.length < 3) {
+                    task.stickers.push({ emoji, url });
+                    saveData();
+                    renderTasks();
+                }
+            }
+            hideStickerModal();
+        };
+
+        const saveTaskFromModal = () => {
+            const taskTitleInput = document.getElementById('task-title-input');
+            const peopleChipContainer = document.getElementById('people-chip-container');
+            const moduleChipContainer = document.getElementById('module-chip-container');
+            const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
+
+            const title = taskTitleInput.value.trim();
+            if (!title) return;
+
+            const selectedPeople = Array.from(peopleChipContainer.querySelectorAll('.chip.selected')).map(c => c.dataset.tag);
+            const selectedModules = Array.from(moduleChipContainer.querySelectorAll('.chip.selected')).map(c => c.dataset.tag);
+            const taskTags = { people: selectedPeople, modules: selectedModules };
+
+            const newContent = {};
+            dailyEntriesWrapper.querySelectorAll('.daily-entry-textarea').forEach(textarea => {
+                const date = textarea.dataset.date;
+                const text = textarea.value.trim();
+                if (text) { newContent[date] = text; }
+            });
+
+            if (editingTaskId) {
+                const task = tasks.find(t => t.id === editingTaskId);
+                if (task) {
+                    task.title = title;
+                    task.tags = taskTags;
+                    task.content = newContent;
+                }
+                saveData();
+                renderTasks(false, null, editingTaskId);
+            } else {
+                const newTaskId = Date.now();
+                tasks.unshift({
+                    id: newTaskId,
+                    title: title,
+                    tags: taskTags,
+                    content: newContent,
+                    createdAt: new Date().toISOString(),
+                    completedAt: null,
+                    archived: false,
+                    stickers: [],
+                    hibernationPeriods: []
+                });
+                saveData();
+                renderTasks(true, newTaskId);
+            }
+            history.back(); // This will trigger the popstate listener to close the modal
+        };
+        
+        const toggleHibernation = () => {
+            if (!editingTaskId) return;
+            const task = tasks.find(t => t.id === editingTaskId);
+            if (!task) return;
+        
+            if (isTaskHibernated(task)) {
+                // Wake up: set end date on the last period
+                const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
+                lastPeriod.end = toYYYYMMDD(new Date());
+            } else {
+                // Hibernate: add a new period with only a start date
+                task.hibernationPeriods.push({ start: toYYYYMMDD(new Date()) });
+            }
+        
+            saveData();
+            renderTasks(true, null, editingTaskId);
+            history.back(); // Close the modal
+        };
+
+
+        const uncompleteTask = (taskId) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task && task.completedAt) {
+                task.completedAt = null;
+                saveData();
+                renderTasks(true);
+            }
+        };
+
+        const completeTask = (taskId) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task && !task.completedAt) {
+                task.completedAt = new Date().toISOString();
+                saveData();
+                renderTasks(true);
+            }
+        };
+
+        const archiveTask = (taskId) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.archived = true;
+                saveData();
+                renderTasks(true);
+            }
+        };
+
+        const updateHeader = () => {
+            const headerTitle = document.getElementById('header-title');
+            if (currentView === 'list') {
+                headerTitle.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            } else {
+                headerTitle.textContent = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+        };
+
+        const toggleView = () => {
+            const taskListView = document.getElementById('task-list-view');
+            const calendarView = document.getElementById('calendar-view');
+            const viewToggle = document.getElementById('view-toggle');
+
+            const isSwitchingToCalendar = currentView === 'list';
+            if (isSwitchingToCalendar) {
+                document.body.classList.add('calendar-active');
+                taskListView.style.display = 'none';
+                calendarView.style.display = 'block';
+                currentView = 'calendar';
+                calendarDate = new Date();
+                renderCalendar();
+            } else {
+                document.body.classList.remove('calendar-active');
+                taskListView.style.display = 'grid';
+                calendarView.style.display = 'none';
+                currentView = 'list';
+            }
+            viewToggle.classList.toggle('calendar-mode', isSwitchingToCalendar);
+            viewToggle.querySelector('[data-view="list"]').classList.toggle('active', !isSwitchingToCalendar);
+            viewToggle.querySelector('[data-view="calendar"]').classList.toggle('active', isSwitchingToCalendar);
+            updateHeader();
+        };
+
+        // --- EVENT HANDLING ---
+        let startX = 0, startY = 0, currentX = 0, currentY = 0, isDragging = false, isClick = true, targetTaskElement = null, dragDirectionLock = null;
+
+        const onDragStart = (clientX, clientY, target) => {
+            if (target.closest('.task-content')) {
+                targetTaskElement = target.closest('.task-item');
+                isDragging = true;
+                isClick = true;
+                startX = clientX;
+                startY = clientY;
+                dragDirectionLock = null; // Reset direction lock
+                targetTaskElement.querySelector('.task-content').style.transition = 'none';
+                target.style.cursor = 'grabbing';
+            }
+        };
+
+        const onDragMove = (clientX, clientY) => {
+            if (!isDragging || !targetTaskElement) return;
+            currentX = clientX;
+            currentY = clientY;
+            let diffX = currentX - startX;
+            let diffY = currentY - startY;
+
+            if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
+                isClick = false; // It's a drag, not a click
+            }
+
+            // Determine and lock the direction on the first significant movement
+            if (!dragDirectionLock && !isClick) {
+                if (Math.abs(diffY) > Math.abs(diffX)) {
+                    dragDirectionLock = 'vertical';
+                } else {
+                    dragDirectionLock = 'horizontal';
+                    // Only add the interaction class for a confirmed horizontal swipe
+                    targetTaskElement.classList.add('is-interacting');
+                }
+            }
+            
+            // Only apply horizontal transform if the drag is locked horizontally
+            if (dragDirectionLock === 'horizontal') {
+                targetTaskElement.querySelector('.task-content').style.transform = `translateX(${diffX}px)`;
+            }
+        };
+
+        const onDragEnd = () => {
+            if (!isDragging || !targetTaskElement) return;
+            const taskContent = targetTaskElement.querySelector('.task-content');
+            const elementToClean = targetTaskElement;
+
+            // Cleanup styles regardless of outcome
+            elementToClean.classList.remove('is-interacting');
+            taskContent.style.transition = 'transform 0.3s ease';
+            taskContent.style.cursor = 'grab';
+
+            const diffX = currentX - startX;
+            const threshold = elementToClean.offsetWidth * 0.4;
+            const taskId = parseInt(elementToClean.dataset.id, 10);
+
+            if (isClick) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task) showModal(task);
+                taskContent.style.transform = 'translateX(0)';
+            } else if (dragDirectionLock === 'horizontal') { // Only process swipe logic if it was a horizontal swipe
+                const shouldComplete = !elementToClean.classList.contains('completed') && diffX > threshold;
+                const shouldUncomplete = elementToClean.classList.contains('completed') && diffX < -threshold;
+
+                if (shouldComplete) {
+                    const timeAgoEl = elementToClean.querySelector('.time-ago');
+                    const completionDate = new Date();
+                    timeAgoEl.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    elementToClean.classList.add('is-completing', 'is-sliding-complete');
+                    taskContent.addEventListener('transitionend', () => completeTask(taskId), { once: true });
+                } else if (shouldUncomplete) {
+                    const timeAgoEl = elementToClean.querySelector('.time-ago');
+                    const task = tasks.find(t => t.id === taskId);
+                    if (task) timeAgoEl.textContent = getRelativeTime(task.createdAt);
+                    elementToClean.classList.remove('completed');
+                    elementToClean.classList.add('is-sliding-uncomplete');
+                    taskContent.addEventListener('transitionend', () => uncompleteTask(taskId), { once: true });
+                }
+                taskContent.style.transform = 'translateX(0)';
+            } else { // This was a vertical swipe, so just reset the position
+                 taskContent.style.transform = 'translateX(0)';
+            }
+
+            // Reset all state variables
+            isDragging = false;
+            targetTaskElement = null;
+            dragDirectionLock = null;
+        };
+
+        const handleAddTag = (container, category) => {
+            // Get the current selection state before altering the DOM
+            const peopleChipContainer = document.getElementById('people-chip-container');
+            const moduleChipContainer = document.getElementById('module-chip-container');
+            const selectedPeople = Array.from(peopleChipContainer.querySelectorAll('.chip.selected')).map(c => c.dataset.tag);
+            const selectedModules = Array.from(moduleChipContainer.querySelectorAll('.chip.selected')).map(c => c.dataset.tag);
+
+            const addBtn = container.querySelector(`#add-${category}-tag-btn`);
+            addBtn.style.display = 'none';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'new-tag-input';
+            input.placeholder = 'New Tag';
+            container.appendChild(input);
+            input.focus();
+
+            const finalizeNewTag = () => {
+                const newTag = input.value.trim();
+                if (newTag && !allTags[category].find(t => t.toLowerCase() === newTag.toLowerCase())) {
+                    allTags[category].push(newTag);
+                    // Automatically select the newly created tag
+                    if (category === 'people') {
+                        selectedPeople.push(newTag);
+                    } else {
+                        selectedModules.push(newTag);
+                    }
+                    saveData();
+                }
+                
+                // Re-render all chips
+                renderAllChips();
+
+                // Re-apply the saved selection state to the new chips
+                peopleChipContainer.querySelectorAll('.chip').forEach(chip => {
+                    if (selectedPeople.includes(chip.dataset.tag)) {
+                        chip.classList.add('selected');
+                    }
+                });
+                moduleChipContainer.querySelectorAll('.chip').forEach(chip => {
+                    if (selectedModules.includes(chip.dataset.tag)) {
+                        chip.classList.add('selected');
+                    }
+                });
+            };
+
+            input.addEventListener('blur', finalizeNewTag);
+            input.addEventListener('keydown', event => { 
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent form submission
+                    finalizeNewTag(); 
+                }
+            });
+        };
+
+        const updateGhostPosition = (x, y) => {
+            if (draggedStickerGhost) {
+                draggedStickerGhost.style.left = `${x}px`;
+                draggedStickerGhost.style.top = `${y}px`;
+            }
+        };
+
+        const handleStickerMove = (x, y) => {
+            if (!isDraggingSticker) return;
+            updateGhostPosition(x, y);
+            if(draggedStickerGhost) draggedStickerGhost.style.display = 'none';
+            const elementUnder = document.elementFromPoint(x, y);
+            if(draggedStickerGhost) draggedStickerGhost.style.display = 'block';
+            if (lastTouchTarget && lastTouchTarget !== elementUnder) {
+                lastTouchTarget.classList.remove('drag-over');
+            }
+            const taskItem = elementUnder ? elementUnder.closest('.task-item') : null;
+            if (taskItem) {
+                taskItem.classList.add('drag-over');
+                lastTouchTarget = taskItem;
+            } else {
+                lastTouchTarget = null;
+            }
+        };
+
+        const handleStickerDrop = () => {
+            if (!isDraggingSticker) return;
+            if (lastTouchTarget) {
+                lastTouchTarget.classList.remove('drag-over');
+                const taskId = parseInt(lastTouchTarget.dataset.id, 10);
+                const emoji = draggedStickerGhost.textContent;
+                const currentTask = tasks.find(t => t.id === taskId);
+                 if (currentTask && (!currentTask.stickers || currentTask.stickers.length < 3)) {
+                    showStickerModal(taskId, emoji);
+                }
+            }
+            if (draggedStickerGhost) document.body.removeChild(draggedStickerGhost);
+            draggedStickerGhost = null;
+            isDraggingSticker = false;
+            lastTouchTarget = null;
+        };
+
+        const initializeStickerOrb = () => {
+            const orbFace = document.querySelector('#sticker-orb .sticker-orb-face');
+            if (!orbFace) return;
+
+            const startDrag = (clientX, clientY) => {
+                isDraggingSticker = true;
+                draggedStickerGhost = document.createElement('div');
+                draggedStickerGhost.textContent = orbFace.textContent.trim();
+                draggedStickerGhost.className = 'sticker-ghost';
+                document.body.appendChild(draggedStickerGhost);
+                updateGhostPosition(clientX, clientY);
+            };
+
+            orbFace.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startDrag(e.clientX, e.clientY);
+            });
+
+            orbFace.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                startDrag(touch.clientX, touch.clientY);
+            }, { passive: false });
+        };
+
+        const postSlideReset = () => {
+            const slider = document.getElementById('calendar-slider');
+            const tasksToRender = getFilteredTasks();
+            const currentGrid = document.getElementById('current-month-grid');
+            const newContentWrapper = renderSingleMonth(currentGrid, calendarDate, tasksToRender);
+            newContentWrapper.style.opacity = '0';
+            const prevDate = new Date(calendarDate);
+            prevDate.setMonth(prevDate.getMonth() - 1);
+            const nextDate = new Date(calendarDate);
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            prepareLoadingState(document.getElementById('prev-month-grid'), prevDate);
+            prepareLoadingState(document.getElementById('next-month-grid'), nextDate);
+            slider.style.transition = 'none';
+            slider.style.transform = 'translateX(-33.3333%)';
+            void slider.offsetWidth;
+            newContentWrapper.style.opacity = '1';
+        };
+
+        let handleDesktopKeys;
+
+        // --- APP INITIALIZATION ---
+        const initializeApp = () => {
+            // Add mobile class to body if applicable
+            if (isMobileDevice) {
+                document.body.classList.add('is-mobile');
+
+                // Create and populate mobile bottom bar by moving existing elements
+                const mobileBottomBar = document.createElement('div');
+                mobileBottomBar.id = 'mobile-bottom-bar';
+
+                const stickerOrb = document.getElementById('sticker-orb');
+                const viewToggle = document.getElementById('view-toggle');
+                const addTaskBtn = document.getElementById('add-task-btn');
+
+                // Move controls to the mobile bottom bar
+                mobileBottomBar.appendChild(stickerOrb);
+                mobileBottomBar.appendChild(viewToggle);
+                mobileBottomBar.appendChild(addTaskBtn);
+
+                document.body.appendChild(mobileBottomBar);
+            }
+
+            // --- History and Back Button Management ---
+            // Replace initial state to prevent navigating back from the app's entry page.
+            history.replaceState({ app_initial_state: true }, '');
+
+            window.addEventListener('popstate', (event) => {
+                const modalContainer = document.getElementById('modal-container');
+                // If the modal is open, the back button should close it.
+                if (modalContainer.classList.contains('show')) {
+                    hideModal();
+                } 
+                // If we're at the initial state and the user tries to go back,
+                // push the state again to "trap" them in the app.
+                else if (event.state === null || !event.state.app_initial_state) {
+                    history.pushState({ app_initial_state: true }, '');
+                }
+            });
+
+            // Get DOM element references
+            toastContainerEl = document.getElementById('toast-container');
+            toastMessageEl = document.getElementById('toast-message');
+            toastAuthorizeBtn = document.getElementById('toast-authorize-btn');
+            const taskListView = document.getElementById('task-list-view');
+            const calendarView = document.getElementById('calendar-view');
+            const modalContainer = document.getElementById('modal-container');
+            const taskForm = document.getElementById('task-form');
+            const peopleChipContainer = document.getElementById('people-chip-container');
+            const moduleChipContainer = document.getElementById('module-chip-container');
+            const viewToggle = document.getElementById('view-toggle');
+            const taskTitleInput = document.getElementById('task-title-input');
+            const calendarSlider = document.getElementById('calendar-slider');
+
+            handleDesktopKeys = (e) => {
+                if (isMobileDevice) return;
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    saveTaskFromModal();
+                }
+            };
+            taskForm.addEventListener('keydown', handleDesktopKeys);
+
+            // Attach Event Listeners
+            updateHeader();
+            document.getElementById('add-task-btn').addEventListener('click', () => showModal());
+            document.getElementById('hibernate-btn').addEventListener('click', toggleHibernation);
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveTaskFromModal();
+            });
+            document.getElementById('sticker-modal-save-btn').addEventListener('click', saveSticker);
+            document.getElementById('sticker-modal-container').addEventListener('click', (e) => { if(e.target === e.currentTarget) hideStickerModal(); });
+            modalContainer.addEventListener('click', (e) => {
+                if (modalJustOpened) return; // Prevents the modal from closing immediately after opening.
+
+                // By checking if the event target is the container itself, we prevent
+                // clicks from bubbling up from the underlying task list and accidentally
+                // closing the modal the moment it opens.
+                if (e.target === modalContainer) {
+                    if (isKeyboardVisible && document.activeElement) {
+                        document.activeElement.blur();
+                    } else {
+                        history.back(); // Triggers the popstate listener to hide the modal
+                    }
+                }
+            });
+            taskTitleInput.addEventListener('input', () => autoGrow(taskTitleInput));
+            taskTitleInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const todayStr = toYYYYMMDD(new Date());
+                    const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
+                    const todayTextarea = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
+                    if (todayTextarea) {
+                        todayTextarea.focus();
+                    } else {
+                        taskForm.requestSubmit(); // Submit form if no other field to move to
+                    }
+                }
+            });
+            peopleChipContainer.addEventListener('click', e => { if (e.target.classList.contains('chip')) { e.target.classList.toggle('selected'); } else if (e.target.id === 'add-people-tag-btn') { handleAddTag(peopleChipContainer, 'people'); } });
+            moduleChipContainer.addEventListener('click', e => { if (e.target.classList.contains('chip')) { e.target.classList.toggle('selected'); } else if (e.target.id === 'add-modules-tag-btn') { handleAddTag(moduleChipContainer, 'modules'); } });
+            taskListView.addEventListener('mousedown', (e) => onDragStart(e.clientX, e.clientY, e.target));
+            document.addEventListener('mousemove', (e) => onDragMove(e.clientX, e.clientY));
+            document.addEventListener('mouseup', onDragEnd);
+            taskListView.addEventListener('touchstart', (e) => onDragStart(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
+            document.addEventListener('touchmove', (e) => onDragMove(e.touches[0].clientX, e.touches[0].clientY));
+            document.addEventListener('touchend', onDragEnd);
+            taskListView.addEventListener('dblclick', (e) => { if (e.target === taskListView) showModal(); });
+            document.addEventListener('mousemove', (e) => { handleStickerMove(e.clientX, e.clientY); });
+            document.addEventListener('mouseup', (e) => { handleStickerDrop(); });
+            document.addEventListener('touchmove', (e) => { if (!isDraggingSticker) return; e.preventDefault(); const touch = e.touches[0]; handleStickerMove(touch.clientX, touch.clientY); }, { passive: false });
+            document.addEventListener('touchend', (e) => { handleStickerDrop(); });
+
+            let calendarTouchStartX = 0;
+            let calendarDragCurrentX = 0;
+            let isCalendarDragging = false;
+
+            const handleCalendarDragStart = (clientX) => {
+                if (isCalendarDragging) return;
+                calendarSlider.style.transition = 'none';
+                isCalendarDragging = true;
+                calendarTouchStartX = clientX;
+                calendarDragCurrentX = clientX;
+                calendarView.style.cursor = 'grabbing';
+            };
+            const handleCalendarDragMove = (clientX) => {
+                if (!isCalendarDragging) return;
+                calendarDragCurrentX = clientX;
+                const diffX = calendarDragCurrentX - calendarTouchStartX;
+                calendarSlider.style.transform = `translateX(calc(-33.3333% + ${diffX}px))`;
+            };
+            const handleCalendarDragEnd = () => {
+                if (!isCalendarDragging) return;
+                isCalendarDragging = false;
+                calendarView.style.cursor = 'default';
+                const diffX = calendarDragCurrentX - calendarTouchStartX;
+                const threshold = calendarView.offsetWidth / 4;
+                calendarSlider.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                if (Math.abs(diffX) > threshold) {
+                    if (diffX < 0) {
+                        calendarSlider.style.transform = 'translateX(-66.6666%)';
+                        calendarDate.setMonth(calendarDate.getMonth() + 1);
+                    } else {
+                        calendarSlider.style.transform = 'translateX(0%)';
+                        calendarDate.setMonth(calendarDate.getMonth() - 1);
+                    }
+                    updateHeader();
+                    calendarSlider.addEventListener('transitionend', postSlideReset, { once: true });
+                } else {
+                    calendarSlider.style.transform = 'translateX(-33.3333%)';
+                }
+            };
+
+            calendarView.addEventListener('touchstart', e => { if (e.target.closest('button') || e.target.closest('.task-bar')) return; handleCalendarDragStart(e.touches[0].clientX); }, { passive: true });
+            calendarView.addEventListener('touchmove', e => { if (!isCalendarDragging) return; handleCalendarDragMove(e.touches[0].clientX); }, { passive: true });
+            calendarView.addEventListener('touchend', e => { if (!isCalendarDragging) return; handleCalendarDragEnd(); });
+            calendarView.addEventListener('mousedown', e => { if (e.target.closest('button') || e.target.closest('.task-bar')) return; handleCalendarDragStart(e.clientX); });
+            calendarView.addEventListener('mousemove', e => { if (!isCalendarDragging) return; handleCalendarDragMove(e.clientX); });
+            calendarView.addEventListener('mouseup', e => { if (!isCalendarDragging) return; handleCalendarDragEnd(); });
+            calendarView.addEventListener('mouseleave', e => { if (!isCalendarDragging) return; handleCalendarDragEnd(); });
+
+            document.getElementById('filter-bar').addEventListener('click', (e) => {
+                const chip = e.target.closest('.filter-chip');
+                if (!chip) return;
+                const tag = chip.dataset.tag;
+                activeFilterTag = (activeFilterTag === tag) ? null : tag;
+                if (currentView === 'list') {
+                    renderTasks(true);
+                } else {
+                    renderCalendar();
+                }
+            });
+
+            viewToggle.addEventListener('click', toggleView);
+
+            if (useGoogleSheets) {
+                toastAuthorizeBtn.onclick = handleAuthClick;
+            } else {
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('toast-container').style.display = 'none';
+                loadData();
+            }
+
+            initializeStickerOrb();
+        };
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    })();
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

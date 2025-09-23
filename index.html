@@ -747,16 +747,15 @@
         // The client should only communicate with your server, which then makes authenticated
         // requests to the Google Sheets API.
          
-        /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-        */   
-       
+           
+       /*
         const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-         
+         */
 
         // This flag determines which mode the app runs in.
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -900,7 +899,7 @@
                 }
                 tasks.forEach(parseTaskHibernation); // Parse on load
                 allTags = JSON.parse(localStorage.getItem('allTags')) || { people: ['Alice', 'Bob'], modules: ['Frontend', 'API', 'Database'] };
-                renderCurrentView();
+                renderCurrentView(true);
             }
         };
 
@@ -1000,36 +999,7 @@
                 console.error('Error reading from sheet:', err);
                 setStatus('Read Error', true);
             }
-            renderCurrentView();
-        };
-
-        const writeToSheet = async () => {
-            setStatus('Saving...');
-            try {
-                // Prepare tasks for saving by embedding hibernation data
-                const tasksToSave = tasks.map(prepareTaskForSaving);
-                const taskValues = tasksToSave.map(t => [
-                    t.id, t.title, JSON.stringify(t.content), t.createdAt, t.completedAt, t.archived, JSON.stringify(t.tags), JSON.stringify(t.stickers)
-                ]);
-
-                const tagValues = [];
-                Object.keys(allTags).forEach(category => {
-                    allTags[category].forEach(tag => tagValues.push([category, tag]));
-                });
-
-                const data = [
-                    { range: 'tasks!A1', values: [['ID', 'Title', 'ContentJSON', 'CreatedAt', 'CompletedAt', 'Archived', 'TagsJSON', 'StickersJSON'], ...taskValues] },
-                    { range: 'tags!A1', values: [['Category', 'Tag'], ...tagValues] }
-                ];
-
-                await gapi.client.sheets.spreadsheets.values.batchClear({ spreadsheetId: SPREADSHEET_ID, ranges: ['tasks', 'tags'] });
-                await gapi.client.sheets.spreadsheets.values.batchUpdate({ spreadsheetId: SPREADSHEET_ID, valueInputOption: 'USER_ENTERED', data: data });
-
-                setStatus('Saved');
-            } catch (err) {
-                console.error('Error writing to sheet:', err);
-                setStatus('Save Error', true);
-            }
+            renderCurrentView(true);
         };
 
         // --- CORE APP LOGIC & RENDER FUNCTIONS ---
@@ -1065,9 +1035,9 @@
             });
         };
 
-        const renderCurrentView = () => {
+        const renderCurrentView = (initialLoad = false) => {
             if(currentView === 'list') {
-                renderTasks();
+                renderTasks(false, null, null, initialLoad);
             } else {
                 renderCalendar();
             }
@@ -1125,7 +1095,7 @@
             });
         };
 
-        const renderTasks = (animateLayout = false, newTaskId = null, editedTaskId = null) => {
+        const renderTasks = (animateLayout = false, newTaskId = null, editedTaskId = null, initialLoad = false) => {
             const taskListView = document.getElementById('task-list-view');
             const firstPositions = new Map();
             if (animateLayout) {
@@ -1150,7 +1120,14 @@
                 if (task.completedAt) taskItem.classList.add('completed');
                 if (isTaskHibernated(task)) taskItem.classList.add('hibernated');
 
-                if (newTaskId && newTaskId === task.id) {
+                if (initialLoad) {
+                    taskItem.classList.add('new-note-animation');
+                    taskItem.style.animationDelay = `${index * 50}ms`;
+                    // Clean up the inline style after the animation is done to prevent it from affecting future animations
+                    taskItem.addEventListener('animationend', () => {
+                        taskItem.style.animationDelay = '';
+                    }, { once: true });
+                } else if (newTaskId && newTaskId === task.id) {
                     taskItem.classList.add('new-note-animation');
                 }
                 
@@ -2251,6 +2228,7 @@
     </script>
 </body>
 </html>
+
 
 
 

@@ -51,7 +51,7 @@
             display: flex;
             flex-direction: column;
             align-items: stretch;
-            padding: 20px 0px 10px 0px;
+            padding: 20px 20px 10px 20px;
             background-color: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(12px);
             position: sticky;
@@ -80,8 +80,6 @@
             display: flex;
             gap: 10px;
             padding-bottom: 5px;
-            padding-left: 20px;
-            
         }
         .filter-chip {
             padding: 6px 14px;
@@ -543,6 +541,30 @@
         /* --- MOBILE-SPECIFIC STYLES --- */
         #mobile-bottom-bar { display: none; }
 
+        body.is-mobile header {
+            padding-left: 0;
+            padding-right: 0;
+            cursor: pointer;
+        }
+
+        body.is-mobile .header-top-row {
+             padding: 0 20px;
+        }
+
+        body.is-mobile #filter-bar-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+
+        body.is-mobile header.filters-visible #filter-bar-container {
+            max-height: 45px;
+        }
+        
+        body.is-mobile #filter-bar {
+            padding: 0 20px 5px 20px;
+        }
+
         body.is-mobile #modal-container {
             align-items: flex-end;
             transition: none;
@@ -594,8 +616,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 10px 25px;
-            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            padding: 8px 25px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
             background: rgba(248, 248, 248, 0.85);
             backdrop-filter: blur(15px);
             border-top: 1px solid rgba(0,0,0,0.1);
@@ -779,6 +801,7 @@
         let isKeyboardVisible = false;
         let modalJustOpened = false;
         let appHasLoaded = false;
+        let lastScrollY = window.scrollY;
         
         window.gapiLoaded = () => {
             gapi.load('client', initializeGapiClient);
@@ -2059,6 +2082,30 @@
             const taskTitleInput = document.getElementById('task-title-input');
             const calendarSlider = document.getElementById('calendar-slider');
 
+            const header = document.querySelector('header');
+            const headerTopRow = document.querySelector('.header-top-row');
+
+            headerTopRow.addEventListener('click', () => {
+                if (isMobileDevice) {
+                    header.classList.toggle('filters-visible');
+                }
+            });
+
+            window.addEventListener('scroll', () => {
+                if (isMobileDevice && header.classList.contains('filters-visible')) {
+                    if (window.scrollY < lastScrollY && lastScrollY > 10) {
+                        header.classList.remove('filters-visible');
+                    }
+                }
+                lastScrollY = window.scrollY;
+            }, { passive: true });
+
+            document.addEventListener('click', (e) => {
+                if (isMobileDevice && header.classList.contains('filters-visible') && !header.contains(e.target)) {
+                    header.classList.remove('filters-visible');
+                }
+            });
+
             handleDesktopKeys = (e) => {
                 if (isMobileDevice) return;
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -2212,4 +2259,6 @@
     </script>
 </body>
 </html>
+
+
 

@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Checklist</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --background: #f7f8fc;
@@ -18,7 +21,7 @@
             --hibernate-color: #6c757d;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--background);
             background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
             background-size: 25px 25px;
@@ -166,7 +169,7 @@
             transform: rotate(0deg) scale(1.03) translateY(-5px) !important; /* Flatten and lift */
             transition-duration: 0.25s;
         }
-        .task-content { padding: 20px 25px; font-family: 'Georgia', serif; font-size: 18px; line-height: 1.5; width: 100%; flex-grow: 1; box-sizing: border-box; user-select: none; transition: color 0.3s, transform 0.3s ease; cursor: grab; background: transparent; border: none; display: flex; flex-direction: column; }
+        .task-content { padding: 20px 25px; font-size: 18px; line-height: 1.5; width: 100%; flex-grow: 1; box-sizing: border-box; user-select: none; transition: color 0.3s, transform 0.3s ease; cursor: grab; background: transparent; border: none; display: flex; flex-direction: column; }
         .task-item.completed, .task-item.hibernated { opacity: 0.7; }
         .task-item.completed .task-content { color: rgba(0, 0, 0, 0.5); cursor: default; }
         .task-item.completed .task-text-display { text-decoration: line-through; }
@@ -310,7 +313,7 @@
             animation: cardBounce 0.6s ease-in-out;
         }
 
-        .time-ago { font-size: 12px; color: rgba(0,0,0,0.5); font-family: 'Helvetica Neue', sans-serif; margin-bottom: 8px; }
+        .time-ago { font-size: 12px; color: rgba(0,0,0,0.5); margin-bottom: 8px; }
         .modal-note { width: 440px; max-width: 95vw; background-color: #fffc79; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; flex-direction: column; max-height: 80vh; }
 
         #modal-note-content { flex-grow: 1; overflow-y: auto; padding: 0 25px; }
@@ -319,7 +322,6 @@
             border: none;
             outline: none;
             padding: 25px 0 15px 0;
-            font-family: 'Georgia', serif;
             font-size: 22px;
             font-weight: bold;
             line-height: 1.3;
@@ -337,7 +339,6 @@
             border: none;
             outline: none;
             width: 100%;
-            font-family: 'Georgia', serif;
             font-size: 16px;
             line-height: 1.5;
             box-sizing: border-box;
@@ -757,7 +758,7 @@
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-            */
+         */   
        
         const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
@@ -2294,4 +2295,8 @@
     </script>
 </body>
 </html>
+" and I want to fix the following issue:
+- when the notes are shown with in animation, the ones which were marked complete should have their content striked through and the opacity of those should also be maintained, right now its showing as a flash after the in-animation finishes
+- the archive button should only be visible for tasks that have been completed, right now i see it even for tasks which are in progress once i swipe them to right
+- in calendar view for rows with more tasks only the row hieght should be more, right now its for all rows, and that too it doent consider the tasks which continue from previous week
 

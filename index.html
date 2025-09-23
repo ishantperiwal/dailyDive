@@ -652,8 +652,7 @@
         }
 
         body.is-mobile .task-item {
-            height: auto;
-            min-height: 180px;
+            height: 200px;
         }
     </style>
 </head>
@@ -1057,6 +1056,17 @@
                         const mobileBar = document.getElementById('mobile-bottom-bar');
                         if (mobileBar) {
                             mobileBar.classList.add('show');
+                            // After the slide-in animation (0.5s), force a repaint to fix positioning
+                            // issues in mobile browsers where the viewport height changes.
+                            mobileBar.addEventListener('transitionend', (e) => {
+                                // We only care about the 'transform' transition finishing.
+                                if (e.propertyName !== 'transform') return;
+                                
+                                // A quick style change forces the browser to recalculate the element's position.
+                                mobileBar.style.bottom = '1px';
+                                void mobileBar.offsetHeight; // Force reflow
+                                mobileBar.style.bottom = ''; // Revert to stylesheet value
+                            }, { once: true });
                         }
                     }, cardAnimationTime);
                 }
@@ -2276,4 +2286,6 @@
     </script>
 </body>
 </html>
+
+
 

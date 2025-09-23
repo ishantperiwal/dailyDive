@@ -541,30 +541,6 @@
         /* --- MOBILE-SPECIFIC STYLES --- */
         #mobile-bottom-bar { display: none; }
 
-        body.is-mobile header {
-            padding-left: 0;
-            padding-right: 0;
-            cursor: pointer;
-        }
-
-        body.is-mobile .header-top-row {
-             padding: 0 20px;
-        }
-
-        body.is-mobile #filter-bar-container {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-in-out;
-        }
-
-        body.is-mobile header.filters-visible #filter-bar-container {
-            max-height: 45px;
-        }
-        
-        body.is-mobile #filter-bar {
-            padding: 0 20px;
-        }
-
         body.is-mobile #modal-container {
             align-items: flex-end;
             transition: none;
@@ -616,8 +592,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 8px 25px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            padding: 10px 25px;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
             background: rgba(248, 248, 248, 0.85);
             backdrop-filter: blur(15px);
             border-top: 1px solid rgba(0,0,0,0.1);
@@ -645,16 +621,16 @@
         }
 
         body.is-mobile #add-task-btn {
-            width: 48px;
-            height: 48px;
-            font-size: 26px;
+            width: 55px;
+            height: 55px;
+            font-size: 30px;
             box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
         }
         
         body.is-mobile .sticker-orb-face {
-            width: 48px;
-            height: 48px;
-            font-size: 24px;
+            width: 55px;
+            height: 55px;
+            font-size: 28px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
 
@@ -2080,15 +2056,6 @@
             const viewToggle = document.getElementById('view-toggle');
             const taskTitleInput = document.getElementById('task-title-input');
             const calendarSlider = document.getElementById('calendar-slider');
-
-            const header = document.querySelector('header');
-            const headerTopRow = document.querySelector('.header-top-row');
-
-            headerTopRow.addEventListener('click', (e) => {
-                if (!isMobileDevice) return;
-                if (e.target.closest('.view-toggle')) return;
-                header.classList.toggle('filters-visible');
-            });
 
             handleDesktopKeys = (e) => {
                 if (isMobileDevice) return;

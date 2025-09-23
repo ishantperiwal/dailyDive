@@ -1055,18 +1055,17 @@
                     setTimeout(() => {
                         const mobileBar = document.getElementById('mobile-bottom-bar');
                         if (mobileBar) {
-                            mobileBar.classList.add('show');
-                            // After the slide-in animation (0.5s), force a repaint to fix positioning
-                            // issues in mobile browsers where the viewport height changes.
-                            mobileBar.addEventListener('transitionend', (e) => {
-                                // We only care about the 'transform' transition finishing.
-                                if (e.propertyName !== 'transform') return;
-                                
-                                // A quick style change forces the browser to recalculate the element's position.
-                                mobileBar.style.bottom = '1px';
-                                void mobileBar.offsetHeight; // Force reflow
-                                mobileBar.style.bottom = ''; // Revert to stylesheet value
-                            }, { once: true });
+                            // Before animating, force a repaint to ensure the browser has the correct
+                            // final viewport dimensions, especially after the address bar collapses.
+                            // This prevents the bar from animating to the wrong spot and then jumping.
+                            mobileBar.style.bottom = '1px';
+                            void mobileBar.offsetHeight; // Force reflow
+                            mobileBar.style.bottom = ''; // Revert to stylesheet value
+
+                            // Now, in the next available frame, trigger the slide-up animation.
+                            requestAnimationFrame(() => {
+                                mobileBar.classList.add('show');
+                            });
                         }
                     }, cardAnimationTime);
                 }
@@ -2286,6 +2285,7 @@
     </script>
 </body>
 </html>
+
 
 
 

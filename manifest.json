@@ -1,0 +1,21 @@
+{
+  "name": "Smart Checklist",
+  "short_name": "Checklist",
+  "description": "A smart checklist and note-taking application.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#007aff",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/007aff/ffffff?text=✓",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/007aff/ffffff?text=✓",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

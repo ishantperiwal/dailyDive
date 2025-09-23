@@ -1,6 +1,6 @@
 {
-  "name": "Smart Checklist",
-  "short_name": "Checklist",
+  "name": "Daily Dive",
+  "short_name": "Daily Dive",
   "description": "A smart checklist and note-taking application.",
   "start_url": ".",
   "display": "standalone",

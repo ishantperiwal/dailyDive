@@ -1122,7 +1122,7 @@
 
                 if (initialLoad) {
                     taskItem.classList.add('new-note-animation');
-                    taskItem.style.animationDelay = `${index * 50}ms`;
+                    taskItem.style.animationDelay = `${index * 150}ms`;
                     // Clean up the inline style after the animation is done to prevent it from affecting future animations
                     taskItem.addEventListener('animationend', () => {
                         taskItem.style.animationDelay = '';
@@ -1371,7 +1371,7 @@
                 }
             });
 
-            const baseRowHeight = 120;
+            const baseRowHeight = 100;
             const taskBarHeight = 28;
             const rowHeights = [];
             const rowOffsets = [0];
@@ -1379,7 +1379,9 @@
 
             rowMaxSlots.forEach((maxSlots, i) => {
                 let rowHeight = baseRowHeight;
-                if (maxSlots > 3) rowHeight += (maxSlots - 3) * taskBarHeight;
+                if (maxSlots > 2) {
+                    rowHeight += (maxSlots - 2) * taskBarHeight;
+                }
                 rowHeights.push(rowHeight);
                 totalHeight += rowHeight;
                 if (i < rowMaxSlots.length - 1) rowOffsets.push(totalHeight);
@@ -2150,51 +2152,71 @@
             document.addEventListener('touchmove', (e) => { if (!isDraggingSticker) return; e.preventDefault(); const touch = e.touches[0]; handleStickerMove(touch.clientX, touch.clientY); }, { passive: false });
             document.addEventListener('touchend', (e) => { handleStickerDrop(); });
 
-            let calendarTouchStartX = 0;
-            let calendarDragCurrentX = 0;
-            let isCalendarDragging = false;
+            let calendarTouchStartX = 0, calendarTouchStartY = 0, calendarDragCurrentX = 0, calendarDragCurrentY = 0, isCalendarDragging = false, calendarDragDirectionLock = null;
 
-            const handleCalendarDragStart = (clientX) => {
+            const handleCalendarDragStart = (clientX, clientY) => {
                 if (isCalendarDragging) return;
                 calendarSlider.style.transition = 'none';
                 isCalendarDragging = true;
                 calendarTouchStartX = clientX;
+                calendarTouchStartY = clientY;
                 calendarDragCurrentX = clientX;
+                calendarDragCurrentY = clientY;
+                calendarDragDirectionLock = null;
                 calendarView.style.cursor = 'grabbing';
             };
-            const handleCalendarDragMove = (clientX) => {
+            const handleCalendarDragMove = (clientX, clientY) => {
                 if (!isCalendarDragging) return;
                 calendarDragCurrentX = clientX;
+                calendarDragCurrentY = clientY;
                 const diffX = calendarDragCurrentX - calendarTouchStartX;
-                calendarSlider.style.transform = `translateX(calc(-33.3333% + ${diffX}px))`;
+                const diffY = calendarDragCurrentY - calendarTouchStartY;
+
+                if (!calendarDragDirectionLock && (Math.abs(diffX) > 5 || Math.abs(diffY) > 5)) {
+                    if (Math.abs(diffY) > Math.abs(diffX)) {
+                        calendarDragDirectionLock = 'vertical';
+                    } else {
+                        calendarDragDirectionLock = 'horizontal';
+                    }
+                }
+
+                if (calendarDragDirectionLock === 'horizontal') {
+                    calendarSlider.style.transform = `translateX(calc(-33.3333% + ${diffX}px))`;
+                }
             };
             const handleCalendarDragEnd = () => {
                 if (!isCalendarDragging) return;
+                
+                const wasHorizontalDrag = calendarDragDirectionLock === 'horizontal';
                 isCalendarDragging = false;
+                calendarDragDirectionLock = null;
                 calendarView.style.cursor = 'default';
+                
                 const diffX = calendarDragCurrentX - calendarTouchStartX;
                 const threshold = calendarView.offsetWidth / 4;
                 calendarSlider.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)';
-                if (Math.abs(diffX) > threshold) {
-                    if (diffX < 0) {
+
+                if (wasHorizontalDrag && Math.abs(diffX) > threshold) {
+                    if (diffX < 0) { // Swiped left
                         calendarSlider.style.transform = 'translateX(-66.6666%)';
                         calendarDate.setMonth(calendarDate.getMonth() + 1);
-                    } else {
+                    } else { // Swiped right
                         calendarSlider.style.transform = 'translateX(0%)';
                         calendarDate.setMonth(calendarDate.getMonth() - 1);
                     }
                     updateHeader();
                     calendarSlider.addEventListener('transitionend', postSlideReset, { once: true });
                 } else {
+                    // If not a significant horizontal swipe, or if it was vertical, snap back.
                     calendarSlider.style.transform = 'translateX(-33.3333%)';
                 }
             };
 
-            calendarView.addEventListener('touchstart', e => { if (e.target.closest('button') || e.target.closest('.task-bar')) return; handleCalendarDragStart(e.touches[0].clientX); }, { passive: true });
-            calendarView.addEventListener('touchmove', e => { if (!isCalendarDragging) return; handleCalendarDragMove(e.touches[0].clientX); }, { passive: true });
+            calendarView.addEventListener('touchstart', e => { if (e.target.closest('button') || e.target.closest('.task-bar')) return; handleCalendarDragStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+            calendarView.addEventListener('touchmove', e => { if (!isCalendarDragging) return; handleCalendarDragMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
             calendarView.addEventListener('touchend', e => { if (!isCalendarDragging) return; handleCalendarDragEnd(); });
-            calendarView.addEventListener('mousedown', e => { if (e.target.closest('button') || e.target.closest('.task-bar')) return; handleCalendarDragStart(e.clientX); });
-            calendarView.addEventListener('mousemove', e => { if (!isCalendarDragging) return; handleCalendarDragMove(e.clientX); });
+            calendarView.addEventListener('mousedown', e => { if (e.target.closest('button') || e.target.closest('.task-bar')) return; handleCalendarDragStart(e.clientX, e.clientY); });
+            calendarView.addEventListener('mousemove', e => { if (!isCalendarDragging) return; handleCalendarDragMove(e.clientX, e.clientY); });
             calendarView.addEventListener('mouseup', e => { if (!isCalendarDragging) return; handleCalendarDragEnd(); });
             calendarView.addEventListener('mouseleave', e => { if (!isCalendarDragging) return; handleCalendarDragEnd(); });
 
@@ -2228,16 +2250,4 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
 

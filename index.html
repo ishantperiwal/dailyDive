@@ -1220,17 +1220,35 @@
                 const taskItem = document.createElement('div');
                 taskItem.className = 'task-item';
                 if (task.completedAt) taskItem.classList.add('completed');
-                if (isTaskHibernated(task)) taskItem.classList.add('hibernated');
-
+                
+                const isHibernated = isTaskHibernated(task);
                 const isNewNote = (newTaskId && newTaskId === task.id);
+                const isAnimatingIn = initialLoad || isNewNote;
 
-                if (initialLoad || isNewNote) {
+                if (isAnimatingIn) {
                     taskItem.classList.add('is-entering');
+                    const enterDelay = initialLoad ? index * 65 : 10;
+                    
+                    // This timeout removes the 'is-entering' class to start the main fade-in animation.
                     setTimeout(() => {
                         requestAnimationFrame(() => {
                             taskItem.classList.remove('is-entering');
                         });
-                    }, initialLoad ? index * 65 : 10);
+                    }, enterDelay);
+
+                    // If the card is hibernated, we want it to first fade in to full opacity,
+                    // and then fade to its hibernated state. We delay adding the class for this second animation.
+                    if (isHibernated) {
+                        const enterTransitionDuration = 500; // Must match the CSS transition duration for opacity.
+                        setTimeout(() => {
+                            taskItem.classList.add('hibernated');
+                        }, enterDelay + enterTransitionDuration);
+                    }
+                } else {
+                    // If it's not the initial animated load, add the hibernated class immediately.
+                    if (isHibernated) {
+                        taskItem.classList.add('hibernated');
+                    }
                 }
                 
                 if (editedTaskId && editedTaskId === task.id) {
@@ -2361,6 +2379,7 @@
     </script>
 </body>
 </html>
+
 
 
 

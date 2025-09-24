@@ -120,7 +120,12 @@
             display: flex;
             gap: 10px;
             padding-bottom: 15px;
-            padding-right: 26px; /* Ensures space at the end of the scroll */
+        }
+        /* Add a pseudo-element to act as a spacer at the end of the scroll */
+        #filter-bar::after {
+            content: '';
+            /* flex-grow, flex-shrink, flex-basis */
+            flex: 0 0 26px;
         }
         .filter-chip {
             padding: 6px 14px;
@@ -669,7 +674,11 @@
         }
         
         body.is-mobile #filter-bar {
-            padding: 0 20px 14px 20px;
+            padding: 0 0 14px 20px;
+        }
+
+        body.is-mobile #filter-bar::after {
+            flex-basis: 20px;
         }
 
         body.is-mobile #modal-container {
@@ -2935,6 +2944,4 @@
     </script>
 </body>
 </html>
-
-
 

@@ -1251,7 +1251,7 @@
             return `${year}-${month}-${day}`;
         };
         const getFilteredTasks = () => {
-            if (!activeFilterTag) return tasks;
+            if (!activeFilterTag || activeFilterTag === 'archived') return tasks;
             return tasks.filter(task => {
                 const allTaskTags = [...(task.tags?.people || []), ...(task.tags?.modules || [])];
                 return allTaskTags.includes(activeFilterTag);
@@ -1293,10 +1293,27 @@
                 if (activeFilterTag === tag) chip.classList.add('active');
                 filterBar.appendChild(chip);
             });
+
+            const archiveChip = document.createElement('div');
+            archiveChip.className = 'filter-chip';
+            archiveChip.textContent = 'Archived';
+            archiveChip.dataset.tag = 'archived';
+            if (activeFilterTag === 'archived') archiveChip.classList.add('active');
+            filterBar.appendChild(archiveChip);
         };
 
         const renderTasks = (animateLayout = false, newTaskId = null, editedTaskId = null, initialLoad = false) => {
             const taskListView = document.getElementById('task-list-view');
+
+            renderFilterBar();
+
+            if (activeFilterTag === 'archived') {
+                renderArchivedTasks();
+                return;
+            }
+
+            taskListView.style.display = 'grid';
+
             const firstPositions = new Map();
             if (animateLayout) {
                 taskListView.querySelectorAll('.task-item').forEach(el => {
@@ -1309,7 +1326,7 @@
             }
 
             sortTasks();
-            renderFilterBar();
+            
             taskListView.innerHTML = '';
             const filteredTasks = getFilteredTasks();
             const visibleTasks = filteredTasks.filter(task => !task.archived);
@@ -1530,6 +1547,74 @@
                     });
                 }, 150);
             }
+        };
+
+        const renderArchivedTasks = () => {
+            const taskListView = document.getElementById('task-list-view');
+            taskListView.innerHTML = '';
+            taskListView.style.display = 'block';
+
+            const archivedTasks = tasks
+                .filter(t => t.archived && t.completedAt)
+                .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+            if (archivedTasks.length === 0) {
+                taskListView.innerHTML = `<p style="text-align: center; color: #888; margin-top: 50px;">No archived tasks found.</p>`;
+                return;
+            }
+
+            const groupedByMonth = archivedTasks.reduce((acc, task) => {
+                const monthYear = new Date(task.completedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                if (!acc[monthYear]) {
+                    acc[monthYear] = [];
+                }
+                acc[monthYear].push(task);
+                return acc;
+            }, {});
+
+            Object.keys(groupedByMonth).forEach(monthYear => {
+                const monthHeader = document.createElement('h2');
+                monthHeader.textContent = monthYear;
+                monthHeader.style.cssText = `
+                    font-size: 1.2em;
+                    font-weight: 600;
+                    margin-top: 30px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #ddd;
+                `;
+                taskListView.appendChild(monthHeader);
+
+                const list = document.createElement('ul');
+                list.style.cssText = 'list-style: none; padding: 0;';
+                taskListView.appendChild(list);
+
+                groupedByMonth[monthYear].forEach(task => {
+                    const item = document.createElement('li');
+                    item.style.cssText = `
+                        background: #fff;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin-top: 10px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    `;
+
+                    const title = document.createElement('div');
+                    title.textContent = task.title;
+                    title.style.fontWeight = '500';
+
+                    const date = document.createElement('div');
+                    date.textContent = `Completed: ${new Date(task.completedAt).toLocaleDateString()}`;
+                    date.style.cssText = `
+                        font-size: 0.8em;
+                        color: #777;
+                        margin-top: 5px;
+                    `;
+
+                    item.appendChild(title);
+                    item.appendChild(date);
+                    list.appendChild(item);
+                });
+            });
         };
 
         const renderChipSection = (container, tags, category) => {
@@ -2565,7 +2650,13 @@
                 const chip = e.target.closest('.filter-chip');
                 if (!chip) return;
                 const tag = chip.dataset.tag;
+
+                if (tag === 'archived' && currentView === 'calendar') {
+                    toggleView();
+                }
+                
                 activeFilterTag = (activeFilterTag === tag) ? null : tag;
+
                 if (currentView === 'list') {
                     renderTasks(true);
                 } else {

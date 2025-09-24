@@ -143,6 +143,16 @@
             box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
         }
 
+        .filter-chip--archive {
+            display: flex;
+            align-items: center;
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+        }
+        .filter-chip--archive:hover {
+            background-color: #cce9fc;
+        }
+
         .view-toggle {
             position: relative;
             display: flex;
@@ -836,14 +846,19 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 5px 25px 25px;
+            text-align: center;
         }
 
         .archive-month-header {
-            padding: 20px 0 10px;
-            font-size: 16px;
+            display: inline-block;
+            padding: 6px 16px;
+            margin: 20px 0;
+            font-size: 14px;
             font-weight: 600;
             color: #6c757d;
-            text-align: center;
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.07);
         }
 
         .archive-month-grid {
@@ -910,6 +925,10 @@
         }
         body.is-mobile .archive-month-header {
             padding-top: 10px;
+        }
+
+        body.is-mobile .task-item.is-archived {
+            height: 140px;
         }
     </style>
 </head>
@@ -1438,8 +1457,8 @@
             });
 
             const archiveChip = document.createElement('div');
-            archiveChip.className = 'filter-chip';
-            archiveChip.textContent = 'Archived';
+            archiveChip.className = 'filter-chip filter-chip--archive';
+            archiveChip.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; vertical-align: -3px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>Archived`;
             archiveChip.dataset.tag = 'archived';
             if (activeFilterTag === 'archived') archiveChip.classList.add('active');
             filterBar.appendChild(archiveChip);

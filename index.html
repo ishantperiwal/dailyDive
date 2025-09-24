@@ -926,6 +926,22 @@
             font-weight: 500;
         }
 
+        @keyframes fly-out-top-right {
+            from {
+                transform: scale(1) translate(0, 0) rotate(var(--rotation-deg));
+                opacity: 1;
+            }
+            to {
+                transform: scale(0.5) translate(60vw, -60vh) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        .task-item.is-archiving {
+            animation: fly-out-top-right 0.6s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+            z-index: 20; /* Ensure it flies over other cards */
+        }
+
 
         body.is-mobile .archive-header {
             padding: 14px 20px;
@@ -1552,7 +1568,17 @@
 
                 const archiveBtn = document.createElement('button');
                 archiveBtn.className = 'archive-btn';
-                archiveBtn.onclick = () => archiveTask(task.id);
+                archiveBtn.onclick = (e) => {
+                    const taskItemToAnimate = e.currentTarget.closest('.task-item');
+                    if (taskItemToAnimate) {
+                        // Prevent other interactions while animating
+                        taskItemToAnimate.style.pointerEvents = 'none';
+                        taskItemToAnimate.classList.add('is-archiving');
+                        taskItemToAnimate.addEventListener('animationend', () => {
+                            archiveTask(task.id);
+                        }, { once: true });
+                    }
+                };
 
                 if (task.completedAt) {
                     const completionDate = new Date(task.completedAt);

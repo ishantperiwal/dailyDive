@@ -148,6 +148,7 @@
             align-items: center;
             background-color: #e0f2fe;
             color: #0c4a6e;
+            margin-right: 14px;
         }
         .filter-chip--archive:hover {
             background-color: #cce9fc;
@@ -2897,13 +2898,15 @@
                 const tag = chip.dataset.tag;
 
                 if (tag === 'archived') {
-                    showArchiveView();
+                    if (!document.getElementById('archive-view').classList.contains('show')) {
+                        showArchiveView();
+                    }
                     return;
                 }
 
                 const archiveView = document.getElementById('archive-view');
                 if (archiveView.classList.contains('show')) {
-                    hideArchiveView();
+                    history.back();
                 }
 
                 if (currentView === 'calendar') {
@@ -2932,4 +2935,5 @@
     </script>
 </body>
 </html>
+
 

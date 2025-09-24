@@ -511,21 +511,32 @@
             border-radius: 12px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
             text-align: center;
+            width: 380px;
+            max-width: 90vw;
         }
         #attachment-modal-icon {
             font-size: 32px;
             margin-top: 0;
             margin-bottom: 15px;
             color: #555;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #attachment-url-input {
             display: block;
-            width: 250px;
+            width: 100%;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #ddd;
-            font-size: 16px;
+            font-size: 14px;
             margin-bottom: 20px;
+            font-family: inherit;
+            resize: none;
+            overflow-y: hidden;
+            min-height: 40px;
+            line-height: 1.4;
         }
         #attachment-modal-save-btn {
             background-color: var(--accent-color);
@@ -788,7 +799,7 @@
         </section>
         <button id="add-task-btn">+</button>
         <div id="sticker-orb">
-            <div class="sticker-orb-face"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
+            <div class="sticker-orb-face"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
         </div>
     </div>
     <div id="modal-container">
@@ -821,7 +832,7 @@
     <div id="attachment-modal-container">
         <div class="attachment-modal-content">
             <h2 id="attachment-modal-icon"></h2>
-            <input type="url" id="attachment-url-input" placeholder="https://example.com">
+            <textarea id="attachment-url-input" placeholder="https://example.com" rows="1"></textarea>
             <button id="attachment-modal-save-btn">Save Link</button>
         </div>
     </div>
@@ -843,7 +854,7 @@
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
         
-
+        const FIGMA_ICON_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAYNSURBVHhe7Zt/aBNXGMd/56578667/T/puu1mdLuySFomBGtXhy2yZc9YBGPTBDtWChrLwQ62D8UGQ9g2FBuMFQOrYMOuYMOowYoVWgQbO4yV/h9sY+3uG+3uunfu873rbrq76+6u1105+X1f3N17z3nfe8+99567954gBEEQBEEQBEEQBEEQBEH4vylS6lWl1JdK6W0l9b1S+lUp/eH7/3Clf4L+6wlp9T+l1P+q+v89pXRfKb3n+x8upY6U0nNK6Xt/hA8p9T+l1J+k1P8ppd4spR95v39fKf1OKT3n/f7jUnq4lD60fb+3lD6s9z/Q/mK/lD6qlB7p+/+WUn+g93/+L+x3S+lbPvt/KaWflNJV7/3+K6XfLqV3/b6/XErf+20/oPQjPvt/KaW/L6Vf+a2/UEp/UEq/5r3fPymlf0zpv/C+/1yl9Ewpvb+U/rCUnksp9S+lf0rp/1PKH5TSh0rp/1LKv/t9v6SUfq+U/rf3/e+V0ldK6Q+873+8lD4ppR/73/8PpXSKlH7k/f+tUnqklJ7y/v9cKd3zfb+vlL5fSv/U+/4fldJ/KaX/9v3/d6X0R9//V1LKZ33v/38p/VUp/cX3/p+V0o+U0g98//97pfRvpfS/ef//tZReKqUHvN//fyl9+fv/j0rpR77/l1LKZ3z//3Yp/VNp/Q/v/a+V0l/5/n+2lP6+lP6Z3/t/UkqfK6UPe9/7lNJV3//f/W3//H/+e+97S+kbSmmv/rL3vV9Kf/a3//v/+81+Pyl9Vyn9zX/+kFL6V/+t/w/v/e97/+97/w+l9H+U0j++//+59//3fP/f9/57fvv/z/z2f/O/7/2nSmmZ9/3Pvf+/6r3/+d7/8p++973vffc/8/3P/e9/8bffe9/z3//e+57wP/+99z/jvc8533vfe9//jvc//z/jvf/+/+P+2aR0aD58z/f+5/ze/6b3f+/9/3/O+5733/Pe/7z3//e8//f8//3P85/ze9/zff9b7//O+/7n/O//7//f3P/N/+a/3vv/9/7/5f85/ze/9/3/j/7/e/6/f/P/6v2v2S2/8/+9/zvf+5/z/ve877//O9/7/v/m/+X/+d+7/ve+97f/B+/9//v+f6v/n/t97/3/N/87/3ve9/zfff/m/+Z/33//77//3z/+7/m9//e/z3ve+///e8//3ve/7/m/9/7//P/v/f//+a/5/3//3//m/8X7v/s/4/3/P//8/+f+3//v9//e//v85/8d83/++//n+9///+Z//v/e/5///+f//+f//83/zf/v/3/+f+f/z//fe/+//X/t//+//33v/j/lv+97/n++/+//V/m/9b//f+d/z//O//3vvf83/zf///vf//73/+f8X/zf+f//f///83/z/f//57//P//+3/zv+d/9n/3///v/9/3//N//N/9/+f//9v/ne/9//fe//8//l//n/s9/zf/c/53//77//P/s//z//e8//+u//e/5/t/87/3f//6v///3//f//v//9v/+f57//3zf//5f///+b/5/+//v/9/7//f+1/8/+p/53ve+9/6vf//X//v+d/+//l/3//e97///Vf/v+d/6v//+77/f/+7//Nf++9z3j///l/+f+X/9//vf8b///+//nf//vf/V33+XfS37x/6u//z3//Vf/d9/3f+p/3/ve+//v/9/++5f89//l/9/3/ld9//m//V/3/6v/+9//u+///ff8v//8/+/3v/P/u+77v+//3/r//P//+r/vu+7/3v/N//3//e/6v+9/3vfe9//n/+3//f/V33/n/3v/e8//u+/3/e//v+r//t+9/+r/vu/3/ve+//3fe//zf/9/3//9/1//n/+//5f///+b/5/9Xf/e9/3vv+//X/+3/+3/v/6v+d//+r//9/z//L//f85//+/33/L/+XfS7+/+b//98v/+3//e///9n/+f+//3vvf/+//3f+//l//lfS73z//+///m/+f+b/t/9733//f8//7v+9733vf/V/+3/vf//9/+X/+d/3v/+77/e9/y/+Xf+//z/+f+3f/N/73v//+//3f+//zv/+77/+///v//v//v/+3/zv/c//f95f/N///++/+77vt/9f9Jv/n/N//3/+b//7/ve/+7//N//lv/9//X//77/lv8v+l70u+X/U/+//93/+X/S//z/m/+//b/5/1L/m//X/V33u//u+l/+f//9f/m/kv+f/y/+v++3/+X/+3//f/+7/+7//r/m/+f/+3/+b/5//+/+//3//e/5f/N//l/+f/5f/e/6X0H88514i3X/J/2/++/+Xf+/+//d/8f8n/9n/+7//c/8f9v/m//vf+//3/+X/+f+z/+f83/l/1L/p+0/8v+l/+f+b/y/+b/2/+v+z/+//zf/u/73/m//t/3l/v+//n/m//d/+v//8P/l70v4i3/xf9L+Jt/u+/Jv/N/7/8b/7f/N//X/F/Ev2l/i//v+l70v/V/Jv/d//X/F/+f//9v/t//d/3v+l/+b/5//m/+X/+X/7f+L+Jd/p+0/+b/+//U+3/m//X/+9//n/+f/+7/e/9f9v+kv4n/V//3/5/3P+d/+f/7f/7f/Jv8/9L/5v9T/l/4X9y/+X/yf8X/S/i//X/S/+v+r/uv4f9P+nv89///s//lfSr3z/+3/9f/+7//P/E/8v/r/se+d/+f9T//f+9/xf97/rf+7/+f//9/+b/5f9T/t/3//8u+V0p/U0ovKaVL7//uW/y/6HvP+97/9H/j/u+//z/rf+77//P/V/3v/P/t/+X/y/8X//f/L/pe9L/8v+d/3v+d/+b/+7/+//S/8v+9/xv/l/+f/9v+3/9P/e/8P/e/8v+b/+X/S/+/6S/if9b//f+H//f/N/+X//f+L+5/+H/5f/V/L//n/a/93//7//e973//U/+//u//v+XfK6UfKaVL7//uV/6//7//O+/7v//9/z//P/8/6S/p/1X/O/8//z//P/+v+p/7v+b/+XfK6UfqaUXlJKF//uK/4//L/of9//rv99//n/+3//v+t//l/9//h/+b//H/d/7f/6/+7/+/5f/J//n/O/+X/W/+XfK6UfqaUXlJKF//uK/6/7P+//v+b/+/+t//f9r/jf+H/V/3//6v+L+5f/p/3v+N//X/7f9T/7v/9//e/6/+X/y/6XfK+UfqaUXlJKF//u6/+X/+//r/vf/7/3v+P/+v+7/m//7/+//p/3//+X//f8f9/+X/+X/5f/e/6X0H8853/uEAT+QZAW/8E6W+JvGv7tC2QAAAABJRU5ErkJggg==';
            
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
         const isMobileDevice = /Mobi/i.test(navigator.userAgent);
@@ -1379,12 +1390,12 @@
                 const attachmentDisplay = document.createElement('div');
                 attachmentDisplay.className = 'sticker-display-area'; // Re-using class for positioning
                 if (task.attachments) {
-                    const figmaSVG = `<svg width="20" height="20" viewBox="0 0 16 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 24a8 8 0 01-8-8V8a8 8 0 0116 0v8a8 8 0 01-8 8zM8 16a8 8 0 01-8-8h8v8z" fill="#0ACF83"></path><path d="M0 8a8 8 0 018-8h8a8 8 0 01-8 8H0z" fill="#A259FF"></path><path d="M0 8a8 8 0 018-8v8H0z" fill="#F24E1E"></path><path d="M8 8a8 8 0 018 8v8a8 8 0 01-8-8V8z" fill="#FF7262"></path><path d="M8 8a8 8 0 018 8H8V8z" fill="#1ABCFE"></path></svg>`;
+                    const figmaIconHTML = `<img src="${FIGMA_ICON_BASE64}" alt="Figma Icon" width="20" height="20">`;
                     task.attachments.forEach(attachment => {
                         const attachmentLink = document.createElement('a');
                         attachmentLink.className = 'sticker-link'; // Re-using class for styling
                         if (attachment.url.includes('figma.com')) {
-                            attachmentLink.innerHTML = figmaSVG;
+                            attachmentLink.innerHTML = figmaIconHTML;
                         } else {
                             attachmentLink.textContent = '📄';
                         }
@@ -1837,8 +1848,10 @@
             const paperclipSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
             document.getElementById('attachment-modal-icon').innerHTML = paperclipSVG;
             document.getElementById('attachment-modal-container').style.display = 'flex';
-            document.getElementById('attachment-url-input').value = '';
-            document.getElementById('attachment-url-input').focus();
+            const urlInput = document.getElementById('attachment-url-input');
+            urlInput.value = '';
+            autoGrow(urlInput);
+            urlInput.focus();
         };
 
         const hideAttachmentModal = () => {
@@ -2317,6 +2330,24 @@
             });
             document.getElementById('attachment-modal-save-btn').addEventListener('click', saveAttachment);
             document.getElementById('attachment-modal-container').addEventListener('click', (e) => { if(e.target === e.currentTarget) hideAttachmentModal(); });
+            
+            const attachmentUrlInput = document.getElementById('attachment-url-input');
+            attachmentUrlInput.addEventListener('input', () => {
+                autoGrow(attachmentUrlInput);
+                const url = attachmentUrlInput.value;
+                const iconContainer = document.getElementById('attachment-modal-icon');
+                const paperclipSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
+                const figmaIconHTML = `<img src="${FIGMA_ICON_BASE64}" alt="Figma Icon" width="28" height="28" style="vertical-align: middle;">`;
+
+                if (url.includes('figma.com')) {
+                    iconContainer.innerHTML = figmaIconHTML;
+                } else if (url.trim() !== '') {
+                    iconContainer.innerHTML = '📄';
+                } else {
+                    iconContainer.innerHTML = paperclipSVG;
+                }
+            });
+
             modalContainer.addEventListener('click', (e) => {
                 if (modalJustOpened) return;
                 if (e.target === modalContainer) {
@@ -2452,5 +2483,4 @@
     </script>
 </body>
 </html>
-
 

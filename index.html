@@ -649,7 +649,7 @@
 
         body.is-mobile #filter-bar-container {
             max-height: 0;
-            overflow: hidden;
+            overflow-y: hidden; /* Changed from 'overflow: hidden' to allow horizontal scroll */
             transition: max-height 0.3s ease-in-out;
         }
 

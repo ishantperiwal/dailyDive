@@ -833,22 +833,23 @@
         .archive-content {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 25px;
+            padding: 5px 25px 25px;
+        }
+
+        .archive-month-header {
+            padding: 20px 0 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .archive-month-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, 320px);
             gap: 25px;
             justify-content: center;
-            align-content: start;
-        }
-
-        .archive-month-header {
-            grid-column: 1 / -1;
-            padding: 0 0 10px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #6c757d;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: center;
+            padding-bottom: 15px;
         }
 
         .task-item.is-archived {
@@ -1704,6 +1705,9 @@
                 monthHeader.textContent = monthYear;
                 container.appendChild(monthHeader);
 
+                const monthGrid = document.createElement('div');
+                monthGrid.className = 'archive-month-grid';
+
                 groupedByMonth[monthYear].forEach(task => {
                     const taskItem = document.createElement('div');
                     taskItem.className = 'task-item completed is-entering is-archived';
@@ -1784,9 +1788,10 @@
                     };
                     taskItem.appendChild(restoreBtn);
 
-                    container.appendChild(taskItem);
+                    monthGrid.appendChild(taskItem);
                     overallIndex++;
                 });
+                container.appendChild(monthGrid);
             });
         };
 
@@ -2897,6 +2902,7 @@
     </script>
 </body>
 </html>
+
 
 
 

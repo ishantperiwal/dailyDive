@@ -840,11 +840,59 @@
             align-content: start;
         }
 
+        .archive-month-header {
+            grid-column: 1 / -1;
+            padding: 20px 0 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .task-item.is-archived {
+            height: 140px;
+        }
+
+        .restore-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 80px;
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            opacity: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            flex-direction: column;
+            gap: 4px;
+            line-height: 1;
+        }
+
+        .task-item.is-archived:hover .restore-btn {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .restore-btn-text {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+
         body.is-mobile .archive-header {
             padding: 14px 20px;
         }
         body.is-mobile .archive-header h2 {
-            font-size: 18px;
+            font-size: 16px;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -1634,94 +1682,105 @@
                 return;
             }
 
-            archivedTasks.forEach((task, index) => {
-                const taskItem = document.createElement('div');
-                taskItem.className = 'task-item completed is-entering';
-                
-                taskItem.dataset.id = task.id;
-                taskItem.style.backgroundColor = noteColors[task.id % noteColors.length];
-                const rotation = (index % 2 === 0 ? 1.5 : -1.5);
-                const startRotation = (rotation > 0) ? -10 : 10;
-                taskItem.style.setProperty('--rotation-deg', `${rotation}deg`);
-                taskItem.style.setProperty('--start-rotation-deg', `${startRotation}deg`);
-                
-                const enterDelay = 150 + (index * 65);
-                setTimeout(() => {
-                    requestAnimationFrame(() => {
-                        taskItem.classList.remove('is-entering');
-                    });
-                }, enterDelay);
+            const groupedByMonth = archivedTasks.reduce((acc, task) => {
+                const monthYear = new Date(task.completedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                if (!acc[monthYear]) {
+                    acc[monthYear] = [];
+                }
+                acc[monthYear].push(task);
+                return acc;
+            }, {});
 
-                const taskContent = document.createElement('div');
-                taskContent.className = 'task-content';
+            let overallIndex = 0;
+            Object.keys(groupedByMonth).forEach(monthYear => {
+                const monthHeader = document.createElement('h3');
+                monthHeader.className = 'archive-month-header';
+                monthHeader.textContent = monthYear;
+                container.appendChild(monthHeader);
 
-                const timeAgo = document.createElement('div');
-                timeAgo.className = 'time-ago';
-                const completionDate = new Date(task.completedAt);
-                timeAgo.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-                taskContent.appendChild(timeAgo);
+                groupedByMonth[monthYear].forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = 'task-item completed is-entering is-archived';
+                    
+                    taskItem.dataset.id = task.id;
+                    taskItem.style.backgroundColor = noteColors[task.id % noteColors.length];
+                    const rotation = (overallIndex % 2 === 0 ? 1.5 : -1.5);
+                    const startRotation = (rotation > 0) ? -10 : 10;
+                    taskItem.style.setProperty('--rotation-deg', `${rotation}deg`);
+                    taskItem.style.setProperty('--start-rotation-deg', `${startRotation}deg`);
+                    
+                    const enterDelay = 150 + (overallIndex * 65);
+                    setTimeout(() => {
+                        requestAnimationFrame(() => {
+                            taskItem.classList.remove('is-entering');
+                        });
+                    }, enterDelay);
 
-                const textDisplay = document.createElement('div');
-                textDisplay.className = 'task-text-display';
+                    const taskContent = document.createElement('div');
+                    taskContent.className = 'task-content';
 
-                const titleDisplay = document.createElement('div');
-                titleDisplay.className = 'task-text-title';
-                titleDisplay.textContent = task.title || 'Untitled Task';
-                textDisplay.appendChild(titleDisplay);
+                    const timeAgo = document.createElement('div');
+                    timeAgo.className = 'time-ago';
+                    const completionDate = new Date(task.completedAt);
+                    timeAgo.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    taskContent.appendChild(timeAgo);
 
-                let latestEntryDisplay = null;
-                if (task.content) {
-                    const contentKeys = Object.keys(task.content).sort().reverse();
-                    if (contentKeys.length > 0) {
-                        const latestEntryText = task.content[contentKeys[0]];
-                        latestEntryDisplay = document.createElement('div');
-                        latestEntryDisplay.className = 'task-text-latest-entry';
-                        latestEntryDisplay.textContent = latestEntryText;
-                        textDisplay.appendChild(latestEntryDisplay);
+                    const textDisplay = document.createElement('div');
+                    textDisplay.className = 'task-text-display';
+
+                    const titleDisplay = document.createElement('div');
+                    titleDisplay.className = 'task-text-title';
+                    titleDisplay.textContent = task.title || 'Untitled Task';
+                    textDisplay.appendChild(titleDisplay);
+
+                    taskContent.appendChild(textDisplay);
+
+                    const tagsContainer = document.createElement('div');
+                    tagsContainer.className = 'task-tags-container';
+                    if (task.tags) {
+                        const allTaskTags = [...(task.tags.people || []), ...(task.tags.modules || [])];
+                        allTaskTags.forEach(tagText => {
+                            const tagEl = document.createElement('span');
+                            tagEl.className = 'task-tag';
+                            tagEl.textContent = tagText;
+                            tagsContainer.appendChild(tagEl);
+                        });
                     }
-                }
-                taskContent.appendChild(textDisplay);
+                    
+                    const attachmentDisplay = document.createElement('div');
+                    attachmentDisplay.className = 'sticker-display-area'; 
+                    if (task.attachments) {
+                        const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="20" height="20">`;
+                        task.attachments.forEach(attachment => {
+                            const attachmentLink = document.createElement('a');
+                            attachmentLink.className = 'sticker-link';
+                            if (attachment.url.includes('figma.com')) {
+                                attachmentLink.innerHTML = figmaIconHTML;
+                            } else {
+                                attachmentLink.textContent = '📄';
+                            }
+                            attachmentLink.href = attachment.url;
+                            attachmentLink.target = '_blank';
+                            attachmentDisplay.appendChild(attachmentLink);
+                        });
+                    }
+                    
+                    taskItem.appendChild(taskContent);
+                    taskItem.appendChild(tagsContainer);
+                    taskItem.appendChild(attachmentDisplay);
 
-                const tagsContainer = document.createElement('div');
-                tagsContainer.className = 'task-tags-container';
-                if (task.tags) {
-                    const allTaskTags = [...(task.tags.people || []), ...(task.tags.modules || [])];
-                    allTaskTags.forEach(tagText => {
-                        const tagEl = document.createElement('span');
-                        tagEl.className = 'task-tag';
-                        tagEl.textContent = tagText;
-                        tagsContainer.appendChild(tagEl);
-                    });
-                }
-                
-                const attachmentDisplay = document.createElement('div');
-                attachmentDisplay.className = 'sticker-display-area'; 
-                if (task.attachments) {
-                    const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="20" height="20">`;
-                    task.attachments.forEach(attachment => {
-                        const attachmentLink = document.createElement('a');
-                        attachmentLink.className = 'sticker-link';
-                        if (attachment.url.includes('figma.com')) {
-                            attachmentLink.innerHTML = figmaIconHTML;
-                        } else {
-                            attachmentLink.textContent = '📄';
-                        }
-                        attachmentLink.href = attachment.url;
-                        attachmentLink.target = '_blank';
-                        attachmentDisplay.appendChild(attachmentLink);
-                    });
-                }
-                
-                taskItem.appendChild(taskContent);
-                taskItem.appendChild(tagsContainer);
-                taskItem.appendChild(attachmentDisplay);
-                container.appendChild(taskItem);
+                    const restoreBtn = document.createElement('button');
+                    restoreBtn.className = 'restore-btn';
+                    restoreBtn.innerHTML = `<div>&#8634;</div><div class="restore-btn-text">Restore</div>`;
+                    restoreBtn.onclick = (e) => {
+                        e.stopPropagation(); 
+                        unarchiveTask(task.id);
+                    };
+                    taskItem.appendChild(restoreBtn);
 
-                const titleLineHeight = parseInt(window.getComputedStyle(titleDisplay).lineHeight, 10);
-                if (titleLineHeight > 0 && latestEntryDisplay) {
-                    const titleLines = Math.round(titleDisplay.scrollHeight / titleLineHeight);
-                    latestEntryDisplay.style.webkitLineClamp = titleLines > 1 ? '2' : '3';
-                }
+                    container.appendChild(taskItem);
+                    overallIndex++;
+                });
             });
         };
 
@@ -2267,6 +2326,19 @@
                 task.archived = true;
                 saveData();
                 renderTasks(true);
+            }
+        };
+
+        const unarchiveTask = (taskId) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.archived = false;
+                saveData();
+                const archiveContent = document.getElementById('archive-content');
+                if (archiveContent) {
+                    renderArchivedTasks(archiveContent);
+                }
+                setStatus('Task restored');
             }
         };
 
@@ -2819,6 +2891,4 @@
     </script>
 </body>
 </html>
-
-
 

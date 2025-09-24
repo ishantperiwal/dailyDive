@@ -36,39 +36,6 @@
             transition: background-image 0.3s ease;
         }
 
-        #splash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--background);
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease-out;
-            opacity: 1;
-        }
-        #splash-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .splash-logo {
-            margin-bottom: 20px;
-        }
-        #splash-screen p {
-            font-size: 16px;
-            font-weight: 500;
-            color: #888;
-            animation: pulse 2s infinite ease-in-out;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
         body.calendar-active {
             background-image: none;
         }
@@ -1261,8 +1228,7 @@
 
                 if (isAnimatingIn) {
                     taskItem.classList.add('is-entering');
-                    const initialLoadDelay = 150;
-                    const enterDelay = initialLoad ? initialLoadDelay + (index * 65) : 10;
+                    const enterDelay = initialLoad ? index * 65 : 10;
                     
                     // This timeout removes the 'is-entering' class to start the main fade-in animation.
                     setTimeout(() => {
@@ -2204,14 +2170,6 @@
             newContentWrapper.style.opacity = '1';
         };
 
-        const hideSplashScreen = () => {
-            const splash = document.getElementById('splash-screen');
-            if (splash) {
-                splash.classList.add('hidden');
-                splash.addEventListener('transitionend', () => splash.remove(), { once: true });
-            }
-        };
-
         let handleDesktopKeys;
 
         const initializeApp = () => {
@@ -2431,4 +2389,5 @@
     </script>
 </body>
 </html>
+
 

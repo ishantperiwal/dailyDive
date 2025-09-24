@@ -833,6 +833,11 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 320px);
+            gap: 25px;
+            justify-content: center;
+            align-content: start;
         }
 
         body.is-mobile .archive-header {
@@ -1629,57 +1634,94 @@
                 return;
             }
 
-            const groupedByMonth = archivedTasks.reduce((acc, task) => {
-                const monthYear = new Date(task.completedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                if (!acc[monthYear]) {
-                    acc[monthYear] = [];
+            archivedTasks.forEach((task, index) => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item completed is-entering';
+                
+                taskItem.dataset.id = task.id;
+                taskItem.style.backgroundColor = noteColors[task.id % noteColors.length];
+                const rotation = (index % 2 === 0 ? 1.5 : -1.5);
+                const startRotation = (rotation > 0) ? -10 : 10;
+                taskItem.style.setProperty('--rotation-deg', `${rotation}deg`);
+                taskItem.style.setProperty('--start-rotation-deg', `${startRotation}deg`);
+                
+                const enterDelay = 150 + (index * 65);
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        taskItem.classList.remove('is-entering');
+                    });
+                }, enterDelay);
+
+                const taskContent = document.createElement('div');
+                taskContent.className = 'task-content';
+
+                const timeAgo = document.createElement('div');
+                timeAgo.className = 'time-ago';
+                const completionDate = new Date(task.completedAt);
+                timeAgo.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                taskContent.appendChild(timeAgo);
+
+                const textDisplay = document.createElement('div');
+                textDisplay.className = 'task-text-display';
+
+                const titleDisplay = document.createElement('div');
+                titleDisplay.className = 'task-text-title';
+                titleDisplay.textContent = task.title || 'Untitled Task';
+                textDisplay.appendChild(titleDisplay);
+
+                let latestEntryDisplay = null;
+                if (task.content) {
+                    const contentKeys = Object.keys(task.content).sort().reverse();
+                    if (contentKeys.length > 0) {
+                        const latestEntryText = task.content[contentKeys[0]];
+                        latestEntryDisplay = document.createElement('div');
+                        latestEntryDisplay.className = 'task-text-latest-entry';
+                        latestEntryDisplay.textContent = latestEntryText;
+                        textDisplay.appendChild(latestEntryDisplay);
+                    }
                 }
-                acc[monthYear].push(task);
-                return acc;
-            }, {});
+                taskContent.appendChild(textDisplay);
 
-            Object.keys(groupedByMonth).forEach(monthYear => {
-                const monthHeader = document.createElement('h2');
-                monthHeader.textContent = monthYear;
-                monthHeader.style.cssText = `
-                    font-size: 1.2em;
-                    font-weight: 600;
-                    margin-top: 30px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px solid #ddd;
-                `;
-                container.appendChild(monthHeader);
+                const tagsContainer = document.createElement('div');
+                tagsContainer.className = 'task-tags-container';
+                if (task.tags) {
+                    const allTaskTags = [...(task.tags.people || []), ...(task.tags.modules || [])];
+                    allTaskTags.forEach(tagText => {
+                        const tagEl = document.createElement('span');
+                        tagEl.className = 'task-tag';
+                        tagEl.textContent = tagText;
+                        tagsContainer.appendChild(tagEl);
+                    });
+                }
+                
+                const attachmentDisplay = document.createElement('div');
+                attachmentDisplay.className = 'sticker-display-area'; 
+                if (task.attachments) {
+                    const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="20" height="20">`;
+                    task.attachments.forEach(attachment => {
+                        const attachmentLink = document.createElement('a');
+                        attachmentLink.className = 'sticker-link';
+                        if (attachment.url.includes('figma.com')) {
+                            attachmentLink.innerHTML = figmaIconHTML;
+                        } else {
+                            attachmentLink.textContent = '📄';
+                        }
+                        attachmentLink.href = attachment.url;
+                        attachmentLink.target = '_blank';
+                        attachmentDisplay.appendChild(attachmentLink);
+                    });
+                }
+                
+                taskItem.appendChild(taskContent);
+                taskItem.appendChild(tagsContainer);
+                taskItem.appendChild(attachmentDisplay);
+                container.appendChild(taskItem);
 
-                const list = document.createElement('ul');
-                list.style.cssText = 'list-style: none; padding: 0;';
-                container.appendChild(list);
-
-                groupedByMonth[monthYear].forEach(task => {
-                    const item = document.createElement('li');
-                    item.style.cssText = `
-                        background: #fff;
-                        padding: 15px;
-                        border-radius: 8px;
-                        margin-top: 10px;
-                        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-                    `;
-
-                    const title = document.createElement('div');
-                    title.textContent = task.title;
-                    title.style.fontWeight = '500';
-
-                    const date = document.createElement('div');
-                    date.textContent = `Completed: ${new Date(task.completedAt).toLocaleDateString()}`;
-                    date.style.cssText = `
-                        font-size: 0.8em;
-                        color: #777;
-                        margin-top: 5px;
-                    `;
-
-                    item.appendChild(title);
-                    item.appendChild(date);
-                    list.appendChild(item);
-                });
+                const titleLineHeight = parseInt(window.getComputedStyle(titleDisplay).lineHeight, 10);
+                if (titleLineHeight > 0 && latestEntryDisplay) {
+                    const titleLines = Math.round(titleDisplay.scrollHeight / titleLineHeight);
+                    latestEntryDisplay.style.webkitLineClamp = titleLines > 1 ? '2' : '3';
+                }
             });
         };
 
@@ -2777,5 +2819,6 @@
     </script>
 </body>
 </html>
+
 
 

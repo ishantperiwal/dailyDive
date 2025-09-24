@@ -811,7 +811,7 @@
         .archive-header h2 {
             margin: 0;
             font-size: 22px;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .close-archive-btn {
@@ -850,7 +850,11 @@
         }
 
         .task-item.is-archived {
-            height: 140px;
+            height: 160px;
+        }
+
+        .task-item.is-archived .task-text-title {
+            -webkit-line-clamp: 4;
         }
 
         .restore-btn {
@@ -2891,4 +2895,5 @@
     </script>
 </body>
 </html>
+
 

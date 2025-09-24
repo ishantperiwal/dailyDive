@@ -213,7 +213,7 @@
             border: 1px solid #ffffff;
             transform: rotate(var(--rotation-deg, 0deg));
         }
-        .task-item:active {
+        .task-item:has(.task-content:active) {
             transform: rotate(var(--rotation-deg, 0deg)) scale(0.97);
             transition-duration: 0.05s;
         }

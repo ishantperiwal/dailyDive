@@ -313,8 +313,20 @@
         .day-cell { border-right: 1px solid #eee; border-top: 1px solid #eee; padding: 8px; position: relative; }
         .day-cell:nth-child(7n) { border-right: none; }
         .day-cell.other-month .day-number { color: #ccc; }
-        .day-cell.today .day-number { background-color: var(--accent-color); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
-        .day-cell .day-number { cursor: pointer; transition: transform 0.2s ease; }
+        .day-cell.today .day-number {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .day-cell .day-number {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
         .day-cell .day-number:hover { transform: scale(1.1); }
         .day-cell.holiday { background-color: #f2f3f5; }
         
@@ -1094,15 +1106,9 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-        /*
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-        */
-
-         const API_KEY = ''; // Your Google API Key
-        const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
-        const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
         const isMobileDevice = /Mobi/i.test(navigator.userAgent);
@@ -3141,4 +3147,5 @@
     </script>
 </body>
 </html>
+
 

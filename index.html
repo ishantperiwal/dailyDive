@@ -25,6 +25,7 @@
             --shadow-color: rgba(0, 0, 0, 0.08);
             --dot-color: #d7d7d7;
             --hibernate-color: #6c757d;
+            --delete-color: #ff3b30;
         }
         body {
             font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -502,7 +503,7 @@
             box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
         }
 
-        #attachment-modal-container {
+        #attachment-modal-container, #confirmation-modal-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 300;
         }
         .attachment-modal-content {
@@ -555,6 +556,28 @@
             opacity: 0.8;
             transform: translate(-50%, -50%);
             color: #333;
+        }
+
+        .confirmation-modal-content {
+            background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.2); text-align: center; width: 380px; max-width: 90vw;
+        }
+        #confirmation-modal-icon {
+            font-size: 32px; margin: 0 0 15px 0; color: var(--delete-color);
+        }
+        #confirmation-modal-message {
+            margin: 0 0 25px 0; font-size: 16px; line-height: 1.5; color: #333;
+        }
+        .confirmation-modal-buttons {
+            display: flex; justify-content: center; gap: 15px;
+        }
+        .confirmation-modal-buttons button {
+            border: none; padding: 10px 25px; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background-color 0.2s ease;
+        }
+        #confirmation-modal-cancel-btn {
+            background-color: #e9e9f0; color: #333;
+        }
+        #confirmation-modal-confirm-btn {
+            background-color: var(--delete-color); color: white;
         }
 
         @keyframes slide-out-left { to { transform: translateX(-100%); opacity: 0; } }
@@ -837,6 +860,17 @@
         </div>
     </div>
 
+    <div id="confirmation-modal-container">
+        <div class="confirmation-modal-content">
+            <div id="confirmation-modal-icon"></div>
+            <p id="confirmation-modal-message"></p>
+            <div class="confirmation-modal-buttons">
+                <button id="confirmation-modal-cancel-btn">Cancel</button>
+                <button id="confirmation-modal-confirm-btn">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container">
         <span id="toast-message"></span>
         <button id="toast-authorize-btn" style="display: none;">Sign In</button>
@@ -879,6 +913,10 @@
         let draggedAttachmentGhost = null;
         let lastTouchTarget = null;
         let writeTimeout = null;
+        
+        const LONG_PRESS_DURATION = 2500;
+        let longPressTimer = null;
+        let onConfirmCallback = null;
         
         let isKeyboardVisible = false;
         let modalJustOpened = false;
@@ -1289,23 +1327,19 @@
                     const initialLoadDelay = 150;
                     const enterDelay = initialLoad ? initialLoadDelay + (index * 65) : 10;
                     
-                    // This timeout removes the 'is-entering' class to start the main fade-in animation.
                     setTimeout(() => {
                         requestAnimationFrame(() => {
                             taskItem.classList.remove('is-entering');
                         });
                     }, enterDelay);
 
-                    // If the card is hibernated, we want it to first fade in to full opacity,
-                    // and then fade to its hibernated state. We delay adding the class for this second animation.
                     if (isHibernated) {
-                        const enterTransitionDuration = 500; // Must match the CSS transition duration for opacity.
+                        const enterTransitionDuration = 500; 
                         setTimeout(() => {
                             taskItem.classList.add('hibernated');
                         }, enterDelay + enterTransitionDuration);
                     }
                 } else {
-                    // If it's not the initial animated load, add the hibernated class immediately.
                     if (isHibernated) {
                         taskItem.classList.add('hibernated');
                     }
@@ -1386,12 +1420,12 @@
                 taskItem.appendChild(tagsContainer);
 
                 const attachmentDisplay = document.createElement('div');
-                attachmentDisplay.className = 'sticker-display-area'; // Re-using class for positioning
+                attachmentDisplay.className = 'sticker-display-area'; 
                 if (task.attachments) {
                     const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="20" height="20">`;
-                    task.attachments.forEach(attachment => {
+                    task.attachments.forEach((attachment, attachmentIndex) => {
                         const attachmentLink = document.createElement('a');
-                        attachmentLink.className = 'sticker-link'; // Re-using class for styling
+                        attachmentLink.className = 'sticker-link';
                         if (attachment.url.includes('figma.com')) {
                             attachmentLink.innerHTML = figmaIconHTML;
                         } else {
@@ -1399,7 +1433,37 @@
                         }
                         attachmentLink.href = attachment.url;
                         attachmentLink.target = '_blank';
-                        attachmentLink.onclick = (e) => e.stopPropagation();
+                        
+                        const handlePressStart = (e) => {
+                            e.stopPropagation();
+                            clearTimeout(longPressTimer);
+                            longPressTimer = setTimeout(() => {
+                                const icon = attachmentLink.innerHTML;
+                                showConfirmationModal(icon, 'Are you sure you want to delete this attachment?', () => deleteAttachment(task.id, attachmentIndex));
+                            }, LONG_PRESS_DURATION);
+                        };
+
+                        const handlePressEnd = (e) => {
+                            e.stopPropagation();
+                            clearTimeout(longPressTimer);
+                        };
+
+                        attachmentLink.addEventListener('mousedown', handlePressStart);
+                        attachmentLink.addEventListener('touchstart', handlePressStart, { passive: true });
+                        attachmentLink.addEventListener('mouseup', handlePressEnd);
+                        attachmentLink.addEventListener('mouseleave', handlePressEnd);
+                        attachmentLink.addEventListener('touchend', handlePressEnd);
+
+                        attachmentLink.onclick = (e) => {
+                             if (longPressTimer) {
+                                clearTimeout(longPressTimer);
+                                // A normal click should not open the link if a long-press timer was active.
+                                // Instead, we check if the press was short enough to be a click.
+                                // But since a normal click should open the link, we let it propagate
+                                // only if the timeout wasn't fired, which is handled by clearing it.
+                             }
+                        };
+
                         attachmentDisplay.appendChild(attachmentLink);
                     });
                 }
@@ -1419,8 +1483,6 @@
                 taskItem.appendChild(archiveBtn);
                 taskListView.appendChild(taskItem);
 
-                // --- DYNAMIC LINE-CLAMP LOGIC ---
-                // Adjust subtext truncation based on the title's line count.
                 const titleLineHeight = parseInt(window.getComputedStyle(titleDisplay).lineHeight, 10);
                 if (titleLineHeight > 0 && latestEntryDisplay) {
                     const titleLines = Math.round(titleDisplay.scrollHeight / titleLineHeight);
@@ -1856,6 +1918,19 @@
             document.getElementById('attachment-modal-container').style.display = 'none';
             currentAttachmentDrop = null;
         };
+        
+        const showConfirmationModal = (icon, message, onConfirm) => {
+            const modal = document.getElementById('confirmation-modal-container');
+            document.getElementById('confirmation-modal-icon').innerHTML = icon;
+            document.getElementById('confirmation-modal-message').textContent = message;
+            onConfirmCallback = onConfirm;
+            modal.style.display = 'flex';
+        };
+
+        const hideConfirmationModal = () => {
+            document.getElementById('confirmation-modal-container').style.display = 'none';
+            onConfirmCallback = null;
+        };
 
         const saveAttachment = () => {
             if (!currentAttachmentDrop) return;
@@ -1944,18 +2019,13 @@
         const uncompleteTask = (taskId) => {
             const task = tasks.find(t => t.id === taskId);
             if (task && task.completedAt) {
-                // When un-completing, treat the completed period as a hibernation gap.
                 const completionDate = new Date(task.completedAt);
                 const reactivationDate = new Date();
-
-                // The gap should start the day AFTER completion.
                 const gapStartDate = new Date(completionDate);
                 gapStartDate.setDate(gapStartDate.getDate() + 1);
 
-                // Only add a gap if there is at least one full day between completion and reactivation.
                 if (startOfDay(gapStartDate) < startOfDay(reactivationDate)) {
                     task.hibernationPeriods.push({ start: toYYYYMMDD(gapStartDate), end: toYYYYMMDD(reactivationDate) });
-                    // Sort to ensure periods are chronological, which is important for rendering logic.
                     task.hibernationPeriods.sort((a, b) => new Date(a.start) - new Date(b.start));
                 }
                 
@@ -1968,7 +2038,6 @@
         const completeTask = (taskId) => {
             const task = tasks.find(t => t.id === taskId);
             if (task && !task.completedAt) {
-                // If the task is currently hibernating, end the hibernation period.
                 if (isTaskHibernated(task)) {
                     const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
                     lastPeriod.end = toYYYYMMDD(new Date());
@@ -1985,6 +2054,21 @@
                 task.archived = true;
                 saveData();
                 renderTasks(true);
+            }
+        };
+
+        const deleteTask = (taskId) => {
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveData();
+            renderTasks(true);
+        };
+
+        const deleteAttachment = (taskId, attachmentIndex) => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task && task.attachments && task.attachments[attachmentIndex]) {
+                task.attachments.splice(attachmentIndex, 1);
+                saveData();
+                renderTasks(false, null, taskId);
             }
         };
 
@@ -2024,17 +2108,27 @@
         };
 
         let startX = 0, startY = 0, currentX = 0, currentY = 0, isDragging = false, isClick = true, targetTaskElement = null, dragDirectionLock = null;
+        let longPressFired = false;
 
         const onDragStart = (clientX, clientY, target) => {
             if (target.closest('.task-content')) {
                 targetTaskElement = target.closest('.task-item');
                 isDragging = true;
                 isClick = true;
+                longPressFired = false;
                 startX = clientX;
                 startY = clientY;
                 dragDirectionLock = null;
                 targetTaskElement.querySelector('.task-content').style.transition = 'none';
                 target.style.cursor = 'grabbing';
+
+                clearTimeout(longPressTimer);
+                longPressTimer = setTimeout(() => {
+                    longPressFired = true;
+                    isDragging = false; // Prevent click/drag end logic from firing
+                    const taskId = parseInt(targetTaskElement.dataset.id, 10);
+                    showConfirmationModal('🗑️', 'Are you sure you want to delete this task?', () => deleteTask(taskId));
+                }, LONG_PRESS_DURATION);
             }
         };
 
@@ -2047,6 +2141,7 @@
 
             if (Math.abs(diffX) > 5 || Math.abs(diffY) > 5) {
                 isClick = false;
+                clearTimeout(longPressTimer); 
             }
 
             if (!dragDirectionLock && !isClick) {
@@ -2064,7 +2159,13 @@
         };
 
         const onDragEnd = () => {
-            if (!isDragging || !targetTaskElement) return;
+            clearTimeout(longPressTimer);
+            if (!isDragging || !targetTaskElement || longPressFired) {
+                isDragging = false;
+                targetTaskElement = null;
+                return;
+            };
+
             const taskContent = targetTaskElement.querySelector('.task-content');
             const elementToClean = targetTaskElement;
 
@@ -2284,6 +2385,7 @@
             const viewToggle = document.getElementById('view-toggle');
             const taskTitleInput = document.getElementById('task-title-input');
             const calendarSlider = document.getElementById('calendar-slider');
+            const confirmationModal = document.getElementById('confirmation-modal-container');
 
             const header = document.querySelector('header');
             const headerTopRow = document.querySelector('.header-top-row');
@@ -2296,7 +2398,6 @@
 
             window.addEventListener('scroll', () => {
                 if (isMobileDevice && header.classList.contains('filters-visible')) {
-                    // Hide if there's any meaningful scroll movement
                     if (Math.abs(window.scrollY - lastScrollY) > 5) {
                         header.classList.remove('filters-visible');
                     }
@@ -2328,6 +2429,15 @@
             });
             document.getElementById('attachment-modal-save-btn').addEventListener('click', saveAttachment);
             document.getElementById('attachment-modal-container').addEventListener('click', (e) => { if(e.target === e.currentTarget) hideAttachmentModal(); });
+
+            confirmationModal.addEventListener('click', (e) => { if (e.target === e.currentTarget) hideConfirmationModal(); });
+            document.getElementById('confirmation-modal-cancel-btn').addEventListener('click', hideConfirmationModal);
+            document.getElementById('confirmation-modal-confirm-btn').addEventListener('click', () => {
+                if(typeof onConfirmCallback === 'function') {
+                    onConfirmCallback();
+                }
+                hideConfirmationModal();
+            });
             
             const attachmentUrlInput = document.getElementById('attachment-url-input');
             attachmentUrlInput.addEventListener('input', () => {

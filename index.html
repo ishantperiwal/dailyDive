@@ -1532,7 +1532,6 @@
             visibleTasks.forEach((task, index) => {
                 const taskItem = document.createElement('div');
                 taskItem.className = 'task-item';
-                if (task.completedAt) taskItem.classList.add('completed');
                 
                 const isHibernated = isTaskHibernated(task);
                 const isNewNote = (newTaskId && newTaskId === task.id);
@@ -1542,6 +1541,7 @@
                     taskItem.classList.add('is-entering');
                     const initialLoadDelay = 150;
                     const enterDelay = initialLoad ? initialLoadDelay + (index * 65) : 10;
+                    const enterTransitionDuration = 500;
                     
                     setTimeout(() => {
                         requestAnimationFrame(() => {
@@ -1549,14 +1549,19 @@
                         });
                     }, enterDelay);
 
-                    if (isHibernated) {
-                        const enterTransitionDuration = 500; 
+                    if (task.completedAt) {
+                        setTimeout(() => {
+                            taskItem.classList.add('completed');
+                        }, enterDelay + enterTransitionDuration);
+                    } else if (isHibernated) {
                         setTimeout(() => {
                             taskItem.classList.add('hibernated');
                         }, enterDelay + enterTransitionDuration);
                     }
                 } else {
-                    if (isHibernated) {
+                    if (task.completedAt) {
+                        taskItem.classList.add('completed');
+                    } else if (isHibernated) {
                         taskItem.classList.add('hibernated');
                     }
                 }
@@ -2994,5 +2999,6 @@
     </script>
 </body>
 </html>
+
 
 

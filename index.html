@@ -786,6 +786,8 @@
             width: 100%;
             height: 100%;
             background-color: var(--background);
+            background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+            background-size: 25px 25px;
             z-index: 500;
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -860,6 +862,10 @@
             -webkit-line-clamp: 4;
         }
 
+        .task-item.is-archived .task-content {
+            padding-right: 90px;
+        }
+
         .restore-btn {
             background-color: var(--accent-color);
             color: white;
@@ -883,9 +889,10 @@
             line-height: 1;
         }
 
-        .task-item.is-archived:hover .restore-btn {
+        .task-item.is-archived .restore-btn {
             opacity: 1;
             transform: translateX(0);
+            transition-delay: 0.5s;
         }
 
         .restore-btn-text {
@@ -900,6 +907,9 @@
         body.is-mobile .archive-header h2 {
             font-size: 16px;
             font-weight: 500;
+        }
+        body.is-mobile .archive-month-header {
+            padding-top: 10px;
         }
     </style>
 </head>
@@ -2902,6 +2912,7 @@
     </script>
 </body>
 </html>
+
 
 
 

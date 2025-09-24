@@ -942,6 +942,21 @@
             z-index: 20; /* Ensure it flies over other cards */
         }
 
+        @keyframes scale-down-fade-out {
+            from {
+                transform: scale(1) rotate(var(--rotation-deg));
+                opacity: 1;
+            }
+            to {
+                transform: scale(0.8) rotate(var(--rotation-deg));
+                opacity: 0;
+            }
+        }
+
+        .task-item.is-restoring {
+            animation: scale-down-fade-out 0.4s ease-out forwards;
+        }
+
 
         body.is-mobile .archive-header {
             padding: 14px 20px;
@@ -1849,8 +1864,14 @@
                     restoreBtn.className = 'restore-btn';
                     restoreBtn.innerHTML = `<div>&#8634;</div><div class="restore-btn-text">Restore</div>`;
                     restoreBtn.onclick = (e) => {
-                        e.stopPropagation(); 
-                        unarchiveTask(task.id);
+                        e.stopPropagation();
+                        const taskItemToAnimate = e.currentTarget.closest('.task-item');
+                        if (taskItemToAnimate) {
+                            taskItemToAnimate.classList.add('is-restoring');
+                            taskItemToAnimate.addEventListener('animationend', () => {
+                                unarchiveTask(task.id);
+                            }, { once: true });
+                        }
                     };
                     taskItem.appendChild(restoreBtn);
 
@@ -2415,6 +2436,9 @@
                 if (archiveContent) {
                     renderArchivedTasks(archiveContent);
                 }
+                if (currentView === 'list') {
+                    renderTasks(true);
+                }
                 setStatus('Task restored');
             }
         };
@@ -2970,4 +2994,5 @@
     </script>
 </body>
 </html>
+
 

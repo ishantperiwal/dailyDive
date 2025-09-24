@@ -502,22 +502,23 @@
             box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
         }
 
-        #sticker-modal-container {
+        #attachment-modal-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(5px); display: none; align-items: center; justify-content: center; z-index: 300;
         }
-        .sticker-modal-content {
+        .attachment-modal-content {
             background: #fff;
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
-        #sticker-modal-emoji {
-            font-size: 48px;
+        #attachment-modal-icon {
+            font-size: 32px;
             margin-top: 0;
             margin-bottom: 15px;
+            color: #555;
         }
-        #sticker-url-input {
+        #attachment-url-input {
             display: block;
             width: 250px;
             padding: 10px;
@@ -526,7 +527,7 @@
             font-size: 16px;
             margin-bottom: 20px;
         }
-        #sticker-modal-save-btn {
+        #attachment-modal-save-btn {
             background-color: var(--accent-color);
             color: white;
             border: none;
@@ -535,13 +536,14 @@
             font-size: 16px;
             cursor: pointer;
         }
-        .sticker-ghost {
+        .attachment-ghost {
             position: fixed;
             font-size: 40px;
             pointer-events: none;
             z-index: 1000;
             opacity: 0.8;
             transform: translate(-50%, -50%);
+            color: #333;
         }
 
         @keyframes slide-out-left { to { transform: translateX(-100%); opacity: 0; } }
@@ -786,7 +788,7 @@
         </section>
         <button id="add-task-btn">+</button>
         <div id="sticker-orb">
-            <div class="sticker-orb-face">📌</div>
+            <div class="sticker-orb-face"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></div>
         </div>
     </div>
     <div id="modal-container">
@@ -816,11 +818,11 @@
         </div>
     </div>
 
-    <div id="sticker-modal-container">
-        <div class="sticker-modal-content">
-            <h2 id="sticker-modal-emoji"></h2>
-            <input type="url" id="sticker-url-input" placeholder="https://example.com">
-            <button id="sticker-modal-save-btn">Save Link</button>
+    <div id="attachment-modal-container">
+        <div class="attachment-modal-content">
+            <h2 id="attachment-modal-icon"></h2>
+            <input type="url" id="attachment-url-input" placeholder="https://example.com">
+            <button id="attachment-modal-save-btn">Save Link</button>
         </div>
     </div>
 
@@ -863,9 +865,9 @@
         let editingTaskId = null;
         let activeFilterTag = null;
 
-        let currentStickerDrop = null;
-        let isDraggingSticker = false;
-        let draggedStickerGhost = null;
+        let currentAttachmentDrop = null;
+        let isDraggingAttachment = false;
+        let draggedAttachmentGhost = null;
         let lastTouchTarget = null;
         let writeTimeout = null;
         
@@ -975,7 +977,7 @@
                         completedAt: fiveDaysAgo.toISOString(),
                         archived: false,
                         tags: { people: ['Alice'], modules: ['API'] },
-                        stickers: []
+                        attachments: []
                     }];
                 }
                 tasks.forEach(parseTaskHibernation);
@@ -1047,7 +1049,7 @@
                                 completedAt: row[4] || null,
                                 archived: row[5] === 'TRUE',
                                 tags: JSON.parse(row[6] || '{}'),
-                                stickers: JSON.parse(row[7] || '[]')
+                                attachments: JSON.parse(row[7] || '[]')
                             };
                             if (isNaN(task.id) || !task.createdAt) return;
                             parseTaskHibernation(task);
@@ -1090,7 +1092,7 @@
                 // Prepare tasks data
                 const tasksToSave = tasks.map(prepareTaskForSaving);
                 const taskValues = [
-                    ['id', 'title', 'content', 'createdAt', 'completedAt', 'archived', 'tags', 'stickers'],
+                    ['id', 'title', 'content', 'createdAt', 'completedAt', 'archived', 'tags', 'attachments'],
                     ...tasksToSave.map(task => [
                         task.id,
                         task.title,
@@ -1099,7 +1101,7 @@
                         task.completedAt || null,
                         task.archived ? 'TRUE' : 'FALSE',
                         JSON.stringify(task.tags || {}),
-                        JSON.stringify(task.stickers || [])
+                        JSON.stringify(task.attachments || [])
                     ])
                 ];
 
@@ -1374,26 +1376,31 @@
                 taskItem.appendChild(taskContent);
                 taskItem.appendChild(tagsContainer);
 
-                const stickerDisplay = document.createElement('div');
-                stickerDisplay.className = 'sticker-display-area';
-                if (task.stickers) {
-                    task.stickers.forEach(sticker => {
-                        const stickerLink = document.createElement('a');
-                        stickerLink.className = 'sticker-link';
-                        stickerLink.textContent = sticker.emoji;
-                        stickerLink.href = sticker.url;
-                        stickerLink.target = '_blank';
-                        stickerLink.onclick = (e) => e.stopPropagation();
-                        stickerDisplay.appendChild(stickerLink);
+                const attachmentDisplay = document.createElement('div');
+                attachmentDisplay.className = 'sticker-display-area'; // Re-using class for positioning
+                if (task.attachments) {
+                    const figmaSVG = `<svg width="20" height="20" viewBox="0 0 16 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 24a8 8 0 01-8-8V8a8 8 0 0116 0v8a8 8 0 01-8 8zM8 16a8 8 0 01-8-8h8v8z" fill="#0ACF83"></path><path d="M0 8a8 8 0 018-8h8a8 8 0 01-8 8H0z" fill="#A259FF"></path><path d="M0 8a8 8 0 018-8v8H0z" fill="#F24E1E"></path><path d="M8 8a8 8 0 018 8v8a8 8 0 01-8-8V8z" fill="#FF7262"></path><path d="M8 8a8 8 0 018 8H8V8z" fill="#1ABCFE"></path></svg>`;
+                    task.attachments.forEach(attachment => {
+                        const attachmentLink = document.createElement('a');
+                        attachmentLink.className = 'sticker-link'; // Re-using class for styling
+                        if (attachment.url.includes('figma.com')) {
+                            attachmentLink.innerHTML = figmaSVG;
+                        } else {
+                            attachmentLink.textContent = '📄';
+                        }
+                        attachmentLink.href = attachment.url;
+                        attachmentLink.target = '_blank';
+                        attachmentLink.onclick = (e) => e.stopPropagation();
+                        attachmentDisplay.appendChild(attachmentLink);
                     });
                 }
                 if (isTaskHibernated(task)) {
                     const hibernateIcon = document.createElement('div');
                     hibernateIcon.textContent = '💤';
                     hibernateIcon.style.fontSize = '20px';
-                    stickerDisplay.appendChild(hibernateIcon);
+                    attachmentDisplay.appendChild(hibernateIcon);
                 }
-                taskItem.appendChild(stickerDisplay);
+                taskItem.appendChild(attachmentDisplay);
 
                 const uncompletePlaceholder = document.createElement('div');
                 uncompletePlaceholder.className = 'uncomplete-placeholder';
@@ -1825,35 +1832,36 @@
             modalContainer.addEventListener('transitionend', onTransitionEnd);
         };
 
-        const showStickerModal = (taskId, emoji) => {
-            currentStickerDrop = { taskId, emoji };
-            document.getElementById('sticker-modal-emoji').textContent = emoji;
-            document.getElementById('sticker-modal-container').style.display = 'flex';
-            document.getElementById('sticker-url-input').value = '';
-            document.getElementById('sticker-url-input').focus();
+        const showAttachmentModal = (taskId) => {
+            currentAttachmentDrop = { taskId };
+            const paperclipSVG = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
+            document.getElementById('attachment-modal-icon').innerHTML = paperclipSVG;
+            document.getElementById('attachment-modal-container').style.display = 'flex';
+            document.getElementById('attachment-url-input').value = '';
+            document.getElementById('attachment-url-input').focus();
         };
 
-        const hideStickerModal = () => {
-            document.getElementById('sticker-modal-container').style.display = 'none';
-            currentStickerDrop = null;
+        const hideAttachmentModal = () => {
+            document.getElementById('attachment-modal-container').style.display = 'none';
+            currentAttachmentDrop = null;
         };
 
-        const saveSticker = () => {
-            if (!currentStickerDrop) return;
-            const { taskId, emoji } = currentStickerDrop;
-            const url = document.getElementById('sticker-url-input').value.trim();
+        const saveAttachment = () => {
+            if (!currentAttachmentDrop) return;
+            const { taskId } = currentAttachmentDrop;
+            const url = document.getElementById('attachment-url-input').value.trim();
             if (!url) return;
 
             const task = tasks.find(t => t.id === taskId);
             if (task) {
-                if (!task.stickers) task.stickers = [];
-                if (task.stickers.length < 3) {
-                    task.stickers.push({ emoji, url });
+                if (!task.attachments) task.attachments = [];
+                if (task.attachments.length < 3) {
+                    task.attachments.push({ url });
                     saveData();
                     renderTasks();
                 }
             }
-            hideStickerModal();
+            hideAttachmentModal();
         };
 
         const saveTaskFromModal = () => {
@@ -1895,7 +1903,7 @@
                     createdAt: new Date().toISOString(),
                     completedAt: null,
                     archived: false,
-                    stickers: [],
+                    attachments: [],
                     hibernationPeriods: []
                 });
                 saveData();
@@ -2134,18 +2142,18 @@
         };
 
         const updateGhostPosition = (x, y) => {
-            if (draggedStickerGhost) {
-                draggedStickerGhost.style.left = `${x}px`;
-                draggedStickerGhost.style.top = `${y}px`;
+            if (draggedAttachmentGhost) {
+                draggedAttachmentGhost.style.left = `${x}px`;
+                draggedAttachmentGhost.style.top = `${y}px`;
             }
         };
 
-        const handleStickerMove = (x, y) => {
-            if (!isDraggingSticker) return;
+        const handleAttachmentMove = (x, y) => {
+            if (!isDraggingAttachment) return;
             updateGhostPosition(x, y);
-            if(draggedStickerGhost) draggedStickerGhost.style.display = 'none';
+            if(draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'none';
             const elementUnder = document.elementFromPoint(x, y);
-            if(draggedStickerGhost) draggedStickerGhost.style.display = 'block';
+            if(draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'block';
             if (lastTouchTarget && lastTouchTarget !== elementUnder) {
                 lastTouchTarget.classList.remove('drag-over');
             }
@@ -2158,33 +2166,32 @@
             }
         };
 
-        const handleStickerDrop = () => {
-            if (!isDraggingSticker) return;
+        const handleAttachmentDrop = () => {
+            if (!isDraggingAttachment) return;
             if (lastTouchTarget) {
                 lastTouchTarget.classList.remove('drag-over');
                 const taskId = parseInt(lastTouchTarget.dataset.id, 10);
-                const emoji = draggedStickerGhost.textContent;
                 const currentTask = tasks.find(t => t.id === taskId);
-                 if (currentTask && (!currentTask.stickers || currentTask.stickers.length < 3)) {
-                    showStickerModal(taskId, emoji);
+                 if (currentTask && (!currentTask.attachments || currentTask.attachments.length < 3)) {
+                    showAttachmentModal(taskId);
                 }
             }
-            if (draggedStickerGhost) document.body.removeChild(draggedStickerGhost);
-            draggedStickerGhost = null;
-            isDraggingSticker = false;
+            if (draggedAttachmentGhost) document.body.removeChild(draggedAttachmentGhost);
+            draggedAttachmentGhost = null;
+            isDraggingAttachment = false;
             lastTouchTarget = null;
         };
 
-        const initializeStickerOrb = () => {
+        const initializeAttachmentOrb = () => {
             const orbFace = document.querySelector('#sticker-orb .sticker-orb-face');
             if (!orbFace) return;
 
             const startDrag = (clientX, clientY) => {
-                isDraggingSticker = true;
-                draggedStickerGhost = document.createElement('div');
-                draggedStickerGhost.textContent = orbFace.textContent.trim();
-                draggedStickerGhost.className = 'sticker-ghost';
-                document.body.appendChild(draggedStickerGhost);
+                isDraggingAttachment = true;
+                draggedAttachmentGhost = document.createElement('div');
+                draggedAttachmentGhost.innerHTML = orbFace.innerHTML;
+                draggedAttachmentGhost.className = 'attachment-ghost';
+                document.body.appendChild(draggedAttachmentGhost);
                 updateGhostPosition(clientX, clientY);
             };
 
@@ -2308,8 +2315,8 @@
                 e.preventDefault();
                 saveTaskFromModal();
             });
-            document.getElementById('sticker-modal-save-btn').addEventListener('click', saveSticker);
-            document.getElementById('sticker-modal-container').addEventListener('click', (e) => { if(e.target === e.currentTarget) hideStickerModal(); });
+            document.getElementById('attachment-modal-save-btn').addEventListener('click', saveAttachment);
+            document.getElementById('attachment-modal-container').addEventListener('click', (e) => { if(e.target === e.currentTarget) hideAttachmentModal(); });
             modalContainer.addEventListener('click', (e) => {
                 if (modalJustOpened) return;
                 if (e.target === modalContainer) {
@@ -2343,10 +2350,10 @@
             document.addEventListener('touchmove', (e) => onDragMove(e.touches[0].clientX, e.touches[0].clientY));
             document.addEventListener('touchend', onDragEnd);
             taskListView.addEventListener('dblclick', (e) => { if (e.target === taskListView) showModal(); });
-            document.addEventListener('mousemove', (e) => { handleStickerMove(e.clientX, e.clientY); });
-            document.addEventListener('mouseup', (e) => { handleStickerDrop(); });
-            document.addEventListener('touchmove', (e) => { if (!isDraggingSticker) return; e.preventDefault(); const touch = e.touches[0]; handleStickerMove(touch.clientX, touch.clientY); }, { passive: false });
-            document.addEventListener('touchend', (e) => { handleStickerDrop(); });
+            document.addEventListener('mousemove', (e) => { handleAttachmentMove(e.clientX, e.clientY); });
+            document.addEventListener('mouseup', (e) => { handleAttachmentDrop(); });
+            document.addEventListener('touchmove', (e) => { if (!isDraggingAttachment) return; e.preventDefault(); const touch = e.touches[0]; handleAttachmentMove(touch.clientX, touch.clientY); }, { passive: false });
+            document.addEventListener('touchend', (e) => { handleAttachmentDrop(); });
 
             let calendarTouchStartX = 0, calendarTouchStartY = 0, calendarDragCurrentX = 0, calendarDragCurrentY = 0, isCalendarDragging = false, calendarDragDirectionLock = null;
 
@@ -2437,7 +2444,7 @@
                 loadData();
             }
 
-            initializeStickerOrb();
+            initializeAttachmentOrb();
         };
 
         document.addEventListener('DOMContentLoaded', initializeApp);
@@ -2445,4 +2452,5 @@
     </script>
 </body>
 </html>
+
 

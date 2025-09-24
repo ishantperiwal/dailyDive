@@ -264,6 +264,15 @@
         .day-cell.other-month .day-number { color: #ccc; }
         .day-cell.today .day-number { background-color: var(--accent-color); color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
         .task-bar { position: absolute; height: 24px; color: #1f1f1f; text-shadow: 0 0 2px rgba(255,255,255,0.6); border-radius: 4px; font-size: 12px; padding: 0 8px; box-sizing: border-box; line-height: 24px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 1; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); }
+        .task-bar.completed {
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 4px,
+                transparent 4px,
+                transparent 8px
+            );
+        }
         .task-bar.has-prev-indicator { padding-left: 28px; }
         .task-bar.has-next-indicator { padding-right: 28px; }
         .task-continuation-indicator {
@@ -1547,6 +1556,9 @@
                     const span = (barEndDate.getTime() - segmentStart.getTime()) / 86400000 + 1;
                     const taskBar = document.createElement('div');
                     taskBar.className = 'task-bar';
+                    if (task.completedAt) {
+                        taskBar.classList.add('completed');
+                    }
                     taskBar.textContent = task.title;
                     taskBar.style.backgroundColor = noteColors[task.id % noteColors.length].replace('79', 'b3');
                     if (segmentStart.getDay() === 0 && (start < segmentStart || isDateInHibernation(new Date(segmentStart.getTime() - 86400000), task))) {
@@ -2342,11 +2354,4 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
 

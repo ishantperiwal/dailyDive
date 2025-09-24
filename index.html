@@ -1299,11 +1299,12 @@
                 titleDisplay.textContent = task.title || 'Untitled Task';
                 textDisplay.appendChild(titleDisplay);
 
+                let latestEntryDisplay = null;
                 if (task.content) {
                     const contentKeys = Object.keys(task.content).sort().reverse();
                     if (contentKeys.length > 0) {
                         const latestEntryText = task.content[contentKeys[0]];
-                        const latestEntryDisplay = document.createElement('div');
+                        latestEntryDisplay = document.createElement('div');
                         latestEntryDisplay.className = 'task-text-latest-entry';
                         latestEntryDisplay.textContent = latestEntryText;
                         textDisplay.appendChild(latestEntryDisplay);
@@ -1353,6 +1354,14 @@
                 taskItem.appendChild(uncompletePlaceholder);
                 taskItem.appendChild(archiveBtn);
                 taskListView.appendChild(taskItem);
+
+                // --- DYNAMIC LINE-CLAMP LOGIC ---
+                // Adjust subtext truncation based on the title's line count.
+                const titleLineHeight = parseInt(window.getComputedStyle(titleDisplay).lineHeight, 10);
+                if (titleLineHeight > 0 && latestEntryDisplay) {
+                    const titleLines = Math.round(titleDisplay.scrollHeight / titleLineHeight);
+                    latestEntryDisplay.style.webkitLineClamp = titleLines > 1 ? '2' : '3';
+                }
             });
 
             if (animateLayout) {
@@ -2380,4 +2389,5 @@
     </script>
 </body>
 </html>
+
 

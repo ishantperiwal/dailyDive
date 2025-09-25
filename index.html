@@ -1169,14 +1169,13 @@
             tryAppInitialization();
         };
 
-      const gapiClientCallback = (resp) => {
+const gapiClientCallback = (resp) => {
     if (resp.error) {
         console.log('Silent auth failed or user is signed out:', resp.error);
         updateSigninStatus(false);
         return;
     }
-
-    // --- NEW/MODIFIED CODE START ---
+    
     // Clear any previous refresh timer
     clearTimeout(tokenRefreshTimeout);
 
@@ -1193,7 +1192,6 @@
             tokenClient.requestAccessToken({ prompt: 'none' }); 
         }, refreshDelay);
     }
-    // --- NEW/MODIFIED CODE END ---
     
     updateSigninStatus(true);
 };
@@ -1467,64 +1465,88 @@
             hideSplashScreen();
         };
 
-        const writeToSheet = async () => {
-            if (!isAuthorized) return;
-            setStatus('Saving...');
-            try {
-                // Prepare tasks data
-                const tasksToSave = tasks.map(prepareTaskForSaving);
-                const taskValues = [
-                    ['id', 'title', 'content', 'createdAt', 'completedAt', 'archived', 'tags', 'attachments'],
-                    ...tasksToSave.map(task => [
-                        task.id,
-                        task.title,
-                        JSON.stringify(task.content || {}),
-                        task.createdAt,
-                        task.completedAt || null,
-                        task.archived ? 'TRUE' : 'FALSE',
-                        JSON.stringify(task.tags || {}),
-                        JSON.stringify(task.attachments || [])
-                    ])
-                ];
+       const writeToSheet = async () => {
+    if (!isAuthorized) return;
+    setStatus('Saving...');
+    try {
+        // Prepare tasks data
+        const tasksToSave = tasks.map(prepareTaskForSaving);
+        const taskValues = [
+            ['id', 'title', 'content', 'createdAt', 'completedAt', 'archived', 'tags', 'attachments'],
+            ...tasksToSave.map(task => [
+                task.id,
+                task.title,
+                JSON.stringify(task.content || {}),
+                task.createdAt,
+                task.completedAt || null,
+                task.archived ? 'TRUE' : 'FALSE',
+                JSON.stringify(task.tags || {}),
+                JSON.stringify(task.attachments || [])
+            ])
+        ];
 
-                // Prepare tags data
-                const tagValues = [
-                    ['category', 'tag'],
-                    ...allTags.people.map(tag => ['people', tag]),
-                    ...allTags.modules.map(tag => ['modules', tag])
-                ];
-                
-                // Prepare holidays data
-                const holidayValues = [
-                    ['date', 'isHoliday'],
-                    ...Object.entries(holidays).map(([date, isHoliday]) => [date, isHoliday ? 'TRUE' : 'FALSE'])
-                ];
+        // Prepare tags data
+        const tagValues = [
+            ['category', 'tag'],
+            ...allTags.people.map(tag => ['people', tag]),
+            ...allTags.modules.map(tag => ['modules', tag])
+        ];
+        
+        // Prepare holidays data
+        const holidayValues = [
+            ['date', 'isHoliday'],
+            ...Object.entries(holidays).map(([date, isHoliday]) => [date, isHoliday ? 'TRUE' : 'FALSE'])
+        ];
 
-                // Clear existing data from row 2 downwards
-                await gapi.client.sheets.spreadsheets.values.batchClear({
-                    spreadsheetId: SPREADSHEET_ID,
-                    resource: { ranges: ['tasks!A2:H', 'tags!A2:B', 'holidays!A2:B'] }
-                });
+        // Clear existing data from row 2 downwards
+        await gapi.client.sheets.spreadsheets.values.batchClear({
+            spreadsheetId: SPREADSHEET_ID,
+            resource: { ranges: ['tasks!A2:H', 'tags!A2:B', 'holidays!A2:B'] }
+        });
 
-                // Write all data starting from row 1
-                await gapi.client.sheets.spreadsheets.values.batchUpdate({
-                    spreadsheetId: SPREADSHEET_ID,
-                    resource: {
-                        valueInputOption: 'USER_ENTERED',
-                        data: [
-                            { range: 'tasks!A1', values: taskValues },
-                            { range: 'tags!A1', values: tagValues },
-                            { range: 'holidays!A1', values: holidayValues }
-                        ]
-                    }
-                });
-                
-                setStatus('Saved');
-            } catch (err) {
-                console.error('Error writing to sheet:', err);
-                setStatus('Save Error', true);
+        // Write all data starting from row 1
+        await gapi.client.sheets.spreadsheets.values.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            resource: {
+                valueInputOption: 'USER_ENTERED',
+                data: [
+                    { range: 'tasks!A1', values: taskValues },
+                    { range: 'tags!A1', values: tagValues },
+                    { range: 'holidays!A1', values: holidayValues }
+                ]
             }
-        };
+        });
+        
+        setStatus('Saved');
+    } catch (err) {
+        // Check if the error is due to an expired token (401 Unauthorized)
+        if (err.status === 401) {
+            console.log('Token expired. Attempting silent refresh...');
+            setStatus('Re-syncing...');
+            
+            // Attempt to get a new token silently.
+            tokenClient.requestAccessToken({
+                prompt: 'none',
+                callback: async (response) => {
+                    if (response.error) {
+                        // If silent refresh fails, the user must sign in again.
+                        console.error('Silent refresh failed:', response.error);
+                        setStatus('Sync failed. Please sign in.', true);
+                        updateSigninStatus(false);
+                    } else {
+                        // If refresh succeeds, recursively call this function to retry saving.
+                        console.log('Token refreshed successfully. Retrying save...');
+                        await writeToSheet();
+                    }
+                }
+            });
+        } else {
+            // Handle other types of errors (e.g., network issues)
+            console.error('Error writing to sheet:', err);
+            setStatus('Save Error', true);
+        }
+    }
+};
 
         const isTaskHibernated = (task) => {
             if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) {

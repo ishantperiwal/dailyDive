@@ -275,7 +275,7 @@
             align-items: center;
             justify-content: center;
         }
-        #add-task-btn { position: absolute; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: var(--accent-color); color: white; border: none; border-radius: 50%; font-size: 36px; box-shadow: 0 6px 15px rgba(0, 122, 255, 0.4); cursor: pointer; z-index: 100; transition: transform 0.3s ease, opacity 0.3s ease; }
+        #add-task-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: var(--accent-color); color: white; border: none; border-radius: 50%; font-size: 36px; box-shadow: 0 6px 15px rgba(0, 122, 255, 0.4); cursor: pointer; z-index: 100; transition: transform 0.3s ease, opacity 0.3s ease; }
         #add-task-btn:hover { transform: scale(1.05); }
         #calendar-view { display: none; padding: 20px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -483,7 +483,7 @@
         }
 
         #sticker-orb {
-            position: absolute;
+            position: fixed;
             bottom: 30px;
             left: 30px;
             z-index: 150;

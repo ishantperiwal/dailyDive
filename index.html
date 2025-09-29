@@ -2430,52 +2430,40 @@ const gapiClientCallback = (resp) => {
             const contentEntries = task ? { ...task.content } : {};
             
             const datesToRender = new Set();
-            const hibernationEvents = {}; // This will now store a single, final event type per day.
+            const hibernationEvents = {}; // Stores the final event type to show for a given day.
 
-            if (task && task.hibernationPeriods) {
+            if (task && task.hibernationPeriods && task.hibernationPeriods.length > 0) {
                 const createdDateStr = toYYYYMMDD(new Date(task.createdAt));
-                const eventsByDate = {};
-
+                
+                // 1. Gather all individual start/end events into a single, sorted list.
+                const allEvents = [];
                 task.hibernationPeriods.forEach(p => {
-                    if (p.start) {
-                        if (!eventsByDate[p.start]) eventsByDate[p.start] = [];
-                        eventsByDate[p.start].push('hibernated');
-                    }
-                    if (p.end) {
-                        if (!eventsByDate[p.end]) eventsByDate[p.end] = [];
-                        eventsByDate[p.end].push('activated');
+                    if (p.start) allEvents.push({ date: p.start, type: 'hibernated' });
+                    if (p.end) allEvents.push({ date: p.end, type: 'activated' });
+                });
+                allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                // 2. Process events sequentially to determine which pills to show.
+                let lastShownEventType = 'activated'; // A task starts as active.
+
+                allEvents.forEach(event => {
+                    const { date, type } = event;
+                    if (type === 'hibernated' && lastShownEventType !== 'hibernated') {
+                        hibernationEvents[date] = 'hibernated';
+                        lastShownEventType = 'hibernated';
+                    } else if (type === 'activated' && lastShownEventType === 'hibernated') {
+                        // Don't show a "Resumed" pill on the same day the task was created.
+                        if (date !== createdDateStr) {
+                            hibernationEvents[date] = 'activated';
+                        }
+                        lastShownEventType = 'activated';
                     }
                 });
 
-                const sortedEventDates = Object.keys(eventsByDate).sort((a, b) => new Date(a) - new Date(b));
-                let isTaskActive = true;
-
-                // Iterate through all days from task creation to today to correctly track active state.
-                const startDate = new Date(task.createdAt);
-                const endDate = new Date();
-                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                    const dateStr = toYYYYMMDD(d);
-                    const dailyEvents = eventsByDate[dateStr] || [];
-                    const hasPause = dailyEvents.includes('hibernated');
-                    const hasResume = dailyEvents.includes('activated');
-
-                    if (!hasPause && !hasResume) continue; // No events, skip to next day.
-
-                    // Determine the final state for the day and what pill to show.
-                    const wasActiveAtStartOfDay = isTaskActive;
-                    const endsTheDayActive = (hasResume && !hasPause) || (wasActiveAtStartOfDay && !hasPause);
-
-                    if (wasActiveAtStartOfDay && hasPause) {
-                        // It was active and got paused. Show the pause pill.
-                        hibernationEvents[dateStr] = 'hibernated';
-                    } else if (!wasActiveAtStartOfDay && hasResume && dateStr !== createdDateStr) {
-                        // It was paused and got resumed. Show the resume pill.
-                        hibernationEvents[dateStr] = 'activated';
-                    }
-                    isTaskActive = endsTheDayActive;
-
+                // 3. Collect all dates that will have a pill.
+                Object.keys(hibernationEvents).forEach(dateStr => {
                     if (hibernationEvents[dateStr]) datesToRender.add(dateStr);
-                }
+                });
             }
 
             // New Rule: Always prioritize showing "Task Completed" on the end date.

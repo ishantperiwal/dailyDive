@@ -416,9 +416,9 @@
             resize: none;
             overflow-y: hidden;
         }
-        .daily-entry-container { margin-top: 15px; }
-        .daily-entry-date { font-size: 12px; font-weight: bold; color: rgba(0,0,0,0.6); margin-bottom: 8px; text-align: left; }
-        .daily-entry-date.is-holiday { color: #e57373; cursor: pointer; }
+        .daily-entry-container { margin-top: 15px; } /* This class seems unused, can be removed */
+        .daily-entry-date { font-size: 12px; font-weight: bold; color: rgba(0,0,0,0.6); margin: 2px 0 5px 6px; text-align: left; letter-spacing: 0.4px;pointer-events: none; }
+        .daily-entry-date.is-holiday { color: #e57373; cursor: pointer; letter-spacing: 0.4px;pointer-events: none; }
 
         .daily-entry-textarea {
             background: transparent;
@@ -430,7 +430,18 @@
             line-height: 1.5;
             box-sizing: border-box;
             resize: none;
+            text-align: left;
             transition: background-color 0.5s ease;
+            padding: 6px; /* Symmetrical padding for consistency */
+            /* Normalization styles to ensure consistency between div and textarea */
+            display: block;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .daily-entry-textarea.is-editing {
+            padding: 0;
         }
 
         /* --- TIMELINE VIEW STYLES --- */
@@ -441,15 +452,16 @@
         .timeline-entry {
             display: flex;
             position: relative;
+            align-items: flex-start; /* Align items to the top */
             padding-bottom: 20px;
         }
         .timeline-marker {
             position: absolute;
             left: -20px;
-            top: 5px;
+            top: 0;
             width: 20px;
+            height: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
         }
         .timeline-dot {
@@ -457,20 +469,24 @@
             height: 11px;
             border-radius: 50%;
             background-color: rgba(0,0,0,0.2);
-            z-index: 1;
+            z-index: 2;
+            position: absolute;
+            top: 5px;
+            left: 4.5px; /* (20px marker width - 11px dot width) / 2 */
         }
         .timeline-line {
             position: absolute;
-            top: 5px;
-            left: 5px;
+            top: 16px; /* Start the line just below the dot */
             width: 1px;
-            height: calc(100% + 15px);
+            left: 9.5px; /* (20px marker width - 1px line width) / 2 */
+            height: calc(100% - 16px); /* End the line before the next dot starts */
             background-color: rgba(0,0,0,0.1);
         }
         .timeline-entry:last-child .timeline-line {
             display: none;
         }
         .timeline-content {
+            padding-top: 1px; /* Small adjustment for alignment */
             flex-grow: 1;
         }
         #modal-note-footer { padding: 10px 0; border-top: 1px solid rgba(0,0,0,0.1); }
@@ -1147,9 +1163,14 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
+       /*
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
+        */
+        const API_KEY = ''; // Your Google API Key
+        const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
+        const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
         
 
         
@@ -1672,7 +1693,7 @@ const gapiClientCallback = (resp) => {
             return `${diffDays} days ago`;
         };
         const autoGrow = (element) => {
-            element.style.height = 'auto';
+            element.style.height = '1px';
             element.style.height = (element.scrollHeight) + 'px';
         };
 
@@ -2440,6 +2461,8 @@ const gapiClientCallback = (resp) => {
 
                 textDisplay.addEventListener('click', () => {
                     if (textDisplay.querySelector('textarea')) return; // Already in edit mode
+
+                    textDisplay.classList.add('is-editing');
 
                     const currentText = contentEntries[dateStr] || '';
                     textDisplay.innerHTML = ''; // Clear the div

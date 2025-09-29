@@ -1175,7 +1175,7 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-      
+       
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
@@ -1183,7 +1183,7 @@
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-         */
+        */
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -2430,37 +2430,45 @@ const gapiClientCallback = (resp) => {
             const contentEntries = task ? { ...task.content } : {};
             
             const datesToRender = new Set();
-            const hibernationEvents = {};
+            const hibernationEvents = {}; // This will now store a single, final event type per day.
 
             if (task && task.hibernationPeriods) {
                 const createdDateStr = toYYYYMMDD(new Date(task.createdAt));
-                // Create a sorted list of all pause/resume events
-                const allEvents = [];
+                const eventsByDate = {};
+
                 task.hibernationPeriods.forEach(p => {
-                    if (p.start) allEvents.push({ date: p.start, type: 'hibernated' });
-                    if (p.end) allEvents.push({ date: p.end, type: 'activated' });
-                });
-                allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                let isCurrentlyActive = true;
-                let lastDate = '';
-
-                allEvents.forEach(event => {
-                    datesToRender.add(event.date);
-
-                    if (event.type === 'hibernated') {
-                        // Only show "Task Paused" if the task was active before this event.
-                        // If the task is already paused, we don't show another "paused" pill.
-                        if (isCurrentlyActive) {
-                            hibernationEvents[event.date] = 'hibernated';
-                            isCurrentlyActive = false;
-                        }
-                    } else if (event.type === 'activated' && event.date !== createdDateStr && !isCurrentlyActive) {
-                        // Only show "Task Resumed" if the task was previously paused.
-                        hibernationEvents[event.date] = 'activated';
-                        isCurrentlyActive = true;
+                    if (p.start) {
+                        if (!eventsByDate[p.start]) eventsByDate[p.start] = [];
+                        eventsByDate[p.start].push('hibernated');
                     }
-                    lastDate = event.date;
+                    if (p.end) {
+                        if (!eventsByDate[p.end]) eventsByDate[p.end] = [];
+                        eventsByDate[p.end].push('activated');
+                    }
+                });
+
+                const sortedEventDates = Object.keys(eventsByDate).sort((a, b) => new Date(a) - new Date(b));
+                let isTaskActive = true;
+
+                sortedEventDates.forEach(dateStr => {
+                    const wasActiveBeforeToday = isTaskActive;
+                    const hasPause = eventsByDate[dateStr].includes('hibernated');
+                    const hasResume = eventsByDate[dateStr].includes('activated');
+
+                    if (wasActiveBeforeToday) {
+                        if (hasPause && !hasResume) { // Paused and stayed paused
+                            hibernationEvents[dateStr] = 'hibernated';
+                            isTaskActive = false;
+                        }
+                        // If hasPause and hasResume, or just hasResume, state remains active, no pill.
+                    } else { // Was paused before today
+                        if (hasResume && dateStr !== createdDateStr) { // Resumed
+                            hibernationEvents[dateStr] = 'activated';
+                            isTaskActive = true;
+                        }
+                        // If it stays paused, do nothing.
+                    }
+                    if (hibernationEvents[dateStr]) datesToRender.add(dateStr);
                 });
             }
 
@@ -2468,7 +2476,7 @@ const gapiClientCallback = (resp) => {
             if (task && task.completedAt) {
                 const completedDateStr = toYYYYMMDD(new Date(task.completedAt));
                 datesToRender.add(completedDateStr);
-                hibernationEvents[completedDateStr] = 'completed'; // This will override any other event on this date.
+                hibernationEvents[completedDateStr] = 'completed';
             }
 
             // Only add dates with content to the render list.

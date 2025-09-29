@@ -448,6 +448,10 @@
             color: #464646;
         }
 
+        .hibernation-event-pill.completed {
+            background-color: var(--checkmark-color);
+        }
+
         .daily-entry-textarea.is-editing {
             padding: 0;
         }
@@ -2426,19 +2430,27 @@ const gapiClientCallback = (resp) => {
             const contentEntries = task ? { ...task.content } : {};
             
             const datesToRender = new Set(Object.keys(contentEntries));
-            const hibernationEvents = {};
+            let hibernationEvents = {};
 
             if (task && task.hibernationPeriods) {
+                const createdDateStr = toYYYYMMDD(new Date(task.createdAt));
                 task.hibernationPeriods.forEach(period => {
                     if (period.start) {
                         datesToRender.add(period.start);
                         hibernationEvents[period.start] = 'hibernated';
                     }
-                    if (period.end) {
+                    if (period.end && period.end !== createdDateStr) {
                         datesToRender.add(period.end);
                         hibernationEvents[period.end] = 'activated';
                     }
                 });
+            }
+
+            // New Rule: Always prioritize showing "Task Completed" on the end date.
+            if (task && task.completedAt) {
+                const completedDateStr = toYYYYMMDD(new Date(task.completedAt));
+                datesToRender.add(completedDateStr);
+                hibernationEvents[completedDateStr] = 'completed'; // This will override any other event on this date.
             }
 
             if (!datesToRender.has(todayStr)) {
@@ -2469,12 +2481,17 @@ const gapiClientCallback = (resp) => {
                 if (hibernationEvents[dateStr]) {
                     const eventPill = document.createElement('span');
                     eventPill.className = 'hibernation-event-pill';
-                    if (hibernationEvents[dateStr] === 'hibernated') {
+                    const eventType = hibernationEvents[dateStr];
+
+                    if (eventType === 'hibernated') {
                         eventPill.textContent = 'Task Paused';
                         eventPill.classList.add('hibernated');
-                    } else {
+                    } else if (eventType === 'activated') {
                         eventPill.textContent = 'Task Resumed';
                         eventPill.classList.add('activated');
+                    } else if (eventType === 'completed') {
+                        eventPill.textContent = 'Task Completed';
+                        eventPill.classList.add('completed');
                     }
                     dateHeader.appendChild(eventPill);
                 }
@@ -3374,6 +3391,3 @@ const gapiClientCallback = (resp) => {
     </script>
 </body>
 </html>
-
-
-

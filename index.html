@@ -1175,15 +1175,15 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-       
+       /*
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-       /*
+       */
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-         */
+         
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -2450,31 +2450,32 @@ const gapiClientCallback = (resp) => {
                 const sortedEventDates = Object.keys(eventsByDate).sort((a, b) => new Date(a) - new Date(b));
                 let isTaskActive = true;
 
-                sortedEventDates.forEach(dateStr => {
-                    const wasActiveBeforeToday = isTaskActive;
-                    const hasPause = eventsByDate[dateStr].includes('hibernated');
-                    const hasResume = eventsByDate[dateStr].includes('activated');
+                // Iterate through all days from task creation to today to correctly track active state.
+                const startDate = new Date(task.createdAt);
+                const endDate = new Date();
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    const dateStr = toYYYYMMDD(d);
+                    const dailyEvents = eventsByDate[dateStr] || [];
+                    const hasPause = dailyEvents.includes('hibernated');
+                    const hasResume = dailyEvents.includes('activated');
 
-                    // Determine the net state change for the day and what pill to show
-                    if (wasActiveBeforeToday) {
-                        // If the task was ACTIVE, it can only be paused.
-                        // If it's paused and resumed on the same day, the net effect is active, so no pill.
-                        if (hasPause && !hasResume) {
-                            hibernationEvents[dateStr] = 'hibernated';
-                            console.log('Adding "Task Paused" pill for date:', dateStr);
-                            isTaskActive = false;
-                        }
-                    } else { // was PAUSED
-                        // If the task was PAUSED, it can only be resumed.
-                        // If it's resumed and paused on the same day, the net effect is paused, so no pill.
-                        if (hasResume && !hasPause && dateStr !== createdDateStr) {
-                            hibernationEvents[dateStr] = 'activated';
-                            isTaskActive = true;
-                        }
+                    if (!hasPause && !hasResume) continue; // No events, skip to next day.
+
+                    // Determine the final state for the day and what pill to show.
+                    const wasActiveAtStartOfDay = isTaskActive;
+                    const endsTheDayActive = (hasResume && !hasPause) || (wasActiveAtStartOfDay && !hasPause);
+
+                    if (wasActiveAtStartOfDay && hasPause) {
+                        // It was active and got paused. Show the pause pill.
+                        hibernationEvents[dateStr] = 'hibernated';
+                    } else if (!wasActiveAtStartOfDay && hasResume && dateStr !== createdDateStr) {
+                        // It was paused and got resumed. Show the resume pill.
+                        hibernationEvents[dateStr] = 'activated';
                     }
+                    isTaskActive = endsTheDayActive;
 
                     if (hibernationEvents[dateStr]) datesToRender.add(dateStr);
-                });
+                }
             }
 
             // New Rule: Always prioritize showing "Task Completed" on the end date.

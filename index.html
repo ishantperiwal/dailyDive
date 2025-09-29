@@ -1175,15 +1175,15 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-      
+       
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-         /*
+       /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-        */
+         */
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -2455,20 +2455,21 @@ const gapiClientCallback = (resp) => {
                     const hasPause = eventsByDate[dateStr].includes('hibernated');
                     const hasResume = eventsByDate[dateStr].includes('activated');
 
-                    // Determine the net state change for the day
+                    // Determine the net state change for the day and what pill to show
                     if (wasActiveBeforeToday) {
-                        // Was ACTIVE, now what?
-                        if (hasPause && !hasResume) { // Gets paused and stays paused.
+                        // If the task was ACTIVE, it can only be paused.
+                        // If it's paused and resumed on the same day, the net effect is active, so no pill.
+                        if (hasPause && !hasResume) {
                             hibernationEvents[dateStr] = 'hibernated';
                             isTaskActive = false;
                         }
-                        // If it was active and is paused then resumed, or just resumed (illogical), the net state is still active. No pill.
-                    } else { // Was PAUSED, now what?
-                        if (hasResume && !hasPause && dateStr !== createdDateStr) { // Gets resumed and stays resumed.
+                    } else { // was PAUSED
+                        // If the task was PAUSED, it can only be resumed.
+                        // If it's resumed and paused on the same day, the net effect is paused, so no pill.
+                        if (hasResume && !hasPause && dateStr !== createdDateStr) {
                             hibernationEvents[dateStr] = 'activated';
                             isTaskActive = true;
                         }
-                        // If it was paused and is resumed then paused again, or just stays paused, the net state is still paused. No pill.
                     }
 
                     if (hibernationEvents[dateStr]) datesToRender.add(dateStr);

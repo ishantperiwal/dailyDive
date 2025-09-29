@@ -2461,6 +2461,7 @@ const gapiClientCallback = (resp) => {
                         // If it's paused and resumed on the same day, the net effect is active, so no pill.
                         if (hasPause && !hasResume) {
                             hibernationEvents[dateStr] = 'hibernated';
+                            console.log('Adding "Task Paused" pill for date:', dateStr);
                             isTaskActive = false;
                         }
                     } else { // was PAUSED

@@ -2785,13 +2785,30 @@ const gapiClientCallback = (resp) => {
             const task = tasks.find(t => t.id === editingTaskId);
             if (!task) return;
         
+            const today = toYYYYMMDD(new Date());
+            const periods = task.hibernationPeriods || [];
+
             if (isTaskHibernated(task)) {
-                const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
-                lastPeriod.end = toYYYYMMDD(new Date());
+                // Waking up the task
+                const lastPeriod = periods[periods.length - 1];
+                if (lastPeriod.start === today) {
+                    // If it was hibernated today, just remove the period. It cancels out.
+                    periods.pop();
+                } else {
+                    lastPeriod.end = today;
+                }
             } else {
-                task.hibernationPeriods.push({ start: toYYYYMMDD(new Date()) });
+                // Hibernating the task
+                const lastPeriod = periods.length > 0 ? periods[periods.length - 1] : null;
+                if (lastPeriod && lastPeriod.end === today) {
+                    // If it was activated today, just remove the 'end' date.
+                    delete lastPeriod.end;
+                } else {
+                    periods.push({ start: today });
+                }
             }
-        
+            task.hibernationPeriods = periods;
+
             history.back();
 
             // Defer the data save and re-render to allow the close animation to complete smoothly.

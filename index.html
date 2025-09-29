@@ -432,6 +432,47 @@
             resize: none;
             transition: background-color 0.5s ease;
         }
+
+        /* --- TIMELINE VIEW STYLES --- */
+        #daily-entries-wrapper.timeline-view {
+            position: relative;
+            padding: 15px 0 15px 20px;
+        }
+        .timeline-entry {
+            display: flex;
+            position: relative;
+            padding-bottom: 20px;
+        }
+        .timeline-marker {
+            position: absolute;
+            left: -20px;
+            top: 5px;
+            width: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .timeline-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background-color: rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        .timeline-line {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 1px;
+            height: calc(100% + 15px);
+            background-color: rgba(0,0,0,0.1);
+        }
+        .timeline-entry:last-child .timeline-line {
+            display: none;
+        }
+        .timeline-content {
+            flex-grow: 1;
+        }
         #modal-note-footer { padding: 10px 0; border-top: 1px solid rgba(0,0,0,0.1); }
 
         .chip-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 15px 15px 15px; }
@@ -2351,6 +2392,7 @@ const gapiClientCallback = (resp) => {
             taskTitleInput.value = task ? task.title : '';
             dailyEntriesWrapper.innerHTML = '';
 
+            dailyEntriesWrapper.className = 'timeline-view'; // Add class for timeline styling
             const todayStr = toYYYYMMDD(new Date());
             const contentEntries = task ? { ...task.content } : {};
 
@@ -2361,9 +2403,16 @@ const gapiClientCallback = (resp) => {
             const sortedDates = Object.keys(contentEntries).sort().reverse();
 
             sortedDates.forEach(dateStr => {
-                const entryContainer = document.createElement('div');
-                entryContainer.className = 'daily-entry-container';
+                const entryContainer = document.createElement('div'); // This is now timeline-entry
+                entryContainer.className = 'timeline-entry';
 
+                const marker = document.createElement('div');
+                marker.className = 'timeline-marker';
+                marker.innerHTML = '<div class="timeline-dot"></div><div class="timeline-line"></div>';
+                entryContainer.appendChild(marker);
+
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'timeline-content';
                 const dateObj = new Date(dateStr + 'T00:00:00');
                 const dateHeader = document.createElement('div');
                 dateHeader.className = 'daily-entry-date';
@@ -2379,21 +2428,40 @@ const gapiClientCallback = (resp) => {
                     confirmBtn.textContent = 'Yes, Change';
                     confirmBtn.style.backgroundColor = 'var(--accent-color)';
                 });
-                
-                entryContainer.appendChild(dateHeader);
+                contentWrapper.appendChild(dateHeader);
 
-                const textarea = document.createElement('textarea');
-                textarea.className = 'daily-entry-textarea';
-                textarea.placeholder = 'Add a note for today...';
-                textarea.dataset.date = dateStr;
-                textarea.value = contentEntries[dateStr];
-                textarea.addEventListener('input', () => autoGrow(textarea));
-                textarea.addEventListener('focus', handleFocus);
-                textarea.addEventListener('blur', handleBlur);
-                entryContainer.appendChild(textarea);
+                const textDisplay = document.createElement('div');
+                textDisplay.className = 'daily-entry-textarea'; // Keep class for styling
+                textDisplay.dataset.date = dateStr;
+                textDisplay.textContent = contentEntries[dateStr] || 'Add a note for today...';
+                if (!contentEntries[dateStr]) {
+                    textDisplay.style.opacity = '0.6';
+                }
 
+                textDisplay.addEventListener('click', () => {
+                    if (textDisplay.querySelector('textarea')) return; // Already in edit mode
+
+                    const currentText = contentEntries[dateStr] || '';
+                    textDisplay.innerHTML = ''; // Clear the div
+                    textDisplay.style.opacity = '1';
+
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'daily-entry-textarea';
+                    textarea.dataset.date = dateStr;
+                    textarea.value = currentText;
+                    textarea.placeholder = 'Add a note for today...';
+                    
+                    textarea.addEventListener('input', () => autoGrow(textarea));
+                    textarea.addEventListener('focus', handleFocus);
+                    textarea.addEventListener('blur', handleBlur);
+                    
+                    textDisplay.appendChild(textarea);
+                    autoGrow(textarea);
+                    textarea.focus();
+                });
+                contentWrapper.appendChild(textDisplay);
+                entryContainer.appendChild(contentWrapper);
                 dailyEntriesWrapper.appendChild(entryContainer);
-                autoGrow(textarea);
             });
 
             setTimeout(() => autoGrow(taskTitleInput), 0);
@@ -2407,15 +2475,18 @@ const gapiClientCallback = (resp) => {
                 setTimeout(() => {
                     if (!modalContainer.classList.contains('show')) return;
 
-                    const todayTextarea = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
+                    const todayEntryDisplay = dailyEntriesWrapper.querySelector(`.daily-entry-textarea[data-date="${todayStr}"]`);
     
-                    if (task && todayTextarea) {
-                        todayTextarea.focus();
-                        todayTextarea.setSelectionRange(todayTextarea.value.length, todayTextarea.value.length);
-    
-                        todayTextarea.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
+                    if (task && todayEntryDisplay) {
+                        // Programmatically click to enter edit mode
+                        todayEntryDisplay.click();
+                        const textarea = todayEntryDisplay.querySelector('textarea');
+                        if (textarea) {
+                            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                        }
+                        todayEntryDisplay.style.backgroundColor = 'rgba(255, 230, 0, 0.3)';
                         setTimeout(() => {
-                            if(todayTextarea) todayTextarea.style.backgroundColor = 'transparent';
+                            if(todayEntryDisplay) todayEntryDisplay.style.backgroundColor = 'transparent';
                         }, 1500);
                     } else {
                         taskTitleInput.focus();
@@ -2534,7 +2605,13 @@ const gapiClientCallback = (resp) => {
             const newContent = {};
             dailyEntriesWrapper.querySelectorAll('.daily-entry-textarea').forEach(textarea => {
                 const date = textarea.dataset.date;
-                const text = textarea.value.trim();
+                let text = '';
+                const innerTextarea = textarea.querySelector('textarea');
+                if (innerTextarea) {
+                    text = innerTextarea.value.trim();
+                } else if (textarea.style.opacity !== '0.6') { // Don't save placeholder text
+                    text = textarea.textContent.trim();
+                }
                 if (text) { newContent[date] = text; }
             });
 
@@ -3205,6 +3282,3 @@ const gapiClientCallback = (resp) => {
     </script>
 </body>
 </html>
-
-
-

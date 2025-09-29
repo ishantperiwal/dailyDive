@@ -2429,7 +2429,7 @@ const gapiClientCallback = (resp) => {
             const todayStr = toYYYYMMDD(new Date());
             const contentEntries = task ? { ...task.content } : {};
             
-            const datesToRender = new Set(Object.keys(contentEntries));
+            const datesToRender = new Set();
             const hibernationEvents = {};
 
             if (task && task.hibernationPeriods) {
@@ -2471,12 +2471,17 @@ const gapiClientCallback = (resp) => {
                 hibernationEvents[completedDateStr] = 'completed'; // This will override any other event on this date.
             }
 
-            if (!datesToRender.has(todayStr)) {
-                datesToRender.add(todayStr);
-                contentEntries[todayStr] = '';
-            }
+            // Only add dates with content to the render list.
+            Object.keys(contentEntries).forEach(date => {
+                if (contentEntries[date]) {
+                    datesToRender.add(date);
+                }
+            });
 
-            const sortedDates = Array.from(datesToRender).sort().reverse();
+            // Always ensure today is shown.
+            datesToRender.add(todayStr);
+
+            const sortedDates = Array.from(datesToRender).sort((a, b) => new Date(b) - new Date(a));
             sortedDates.forEach(dateStr => {
                 const entryContainer = document.createElement('div'); // This is now timeline-entry
                 entryContainer.className = 'timeline-entry';

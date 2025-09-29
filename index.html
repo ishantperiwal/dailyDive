@@ -2455,19 +2455,22 @@ const gapiClientCallback = (resp) => {
                     const hasPause = eventsByDate[dateStr].includes('hibernated');
                     const hasResume = eventsByDate[dateStr].includes('activated');
 
-                    if (wasActiveBeforeToday) {
-                        if (hasPause && !hasResume) { // Paused and stayed paused
+                    if (hasPause) {
+                        if (wasActiveBeforeToday) {
+                            // If it was active and is now paused, show the pill.
                             hibernationEvents[dateStr] = 'hibernated';
                             isTaskActive = false;
                         }
-                        // If hasPause and hasResume, or just hasResume, state remains active, no pill.
-                    } else { // Was paused before today
-                        if (hasResume && dateStr !== createdDateStr) { // Resumed
+                    }
+
+                    if (hasResume) {
+                        if (!isTaskActive && dateStr !== createdDateStr) {
+                            // If it was paused and is now resumed, show the pill.
                             hibernationEvents[dateStr] = 'activated';
                             isTaskActive = true;
                         }
-                        // If it stays paused, do nothing.
                     }
+
                     if (hibernationEvents[dateStr]) datesToRender.add(dateStr);
                 });
             }

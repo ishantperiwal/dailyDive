@@ -1175,11 +1175,11 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-       
+      
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-        /*
+         /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
@@ -2430,19 +2430,37 @@ const gapiClientCallback = (resp) => {
             const contentEntries = task ? { ...task.content } : {};
             
             const datesToRender = new Set(Object.keys(contentEntries));
-            let hibernationEvents = {};
+            const hibernationEvents = {};
 
             if (task && task.hibernationPeriods) {
                 const createdDateStr = toYYYYMMDD(new Date(task.createdAt));
-                task.hibernationPeriods.forEach(period => {
-                    if (period.start) {
-                        datesToRender.add(period.start);
-                        hibernationEvents[period.start] = 'hibernated';
+                // Create a sorted list of all pause/resume events
+                const allEvents = [];
+                task.hibernationPeriods.forEach(p => {
+                    if (p.start) allEvents.push({ date: p.start, type: 'hibernated' });
+                    if (p.end) allEvents.push({ date: p.end, type: 'activated' });
+                });
+                allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                let isCurrentlyActive = true;
+                let lastDate = '';
+
+                allEvents.forEach(event => {
+                    datesToRender.add(event.date);
+
+                    if (event.type === 'hibernated') {
+                        // Only show "Task Paused" if the task was active before this event.
+                        // The `lastDate !== event.date` check handles the edge case where a task is
+                        // resumed and paused on the same day, correctly showing it as paused.
+                        if (isCurrentlyActive || lastDate !== event.date) {
+                            hibernationEvents[event.date] = 'hibernated';
+                            isCurrentlyActive = false;
+                        }
+                    } else if (event.type === 'activated' && event.date !== createdDateStr) {
+                        hibernationEvents[event.date] = 'activated';
+                        isCurrentlyActive = true;
                     }
-                    if (period.end && period.end !== createdDateStr) {
-                        datesToRender.add(period.end);
-                        hibernationEvents[period.end] = 'activated';
-                    }
+                    lastDate = event.date;
                 });
             }
 

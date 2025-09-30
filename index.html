@@ -2667,6 +2667,7 @@ const gapiClientCallback = (resp) => {
 
         const showArchiveView = () => {
             history.pushState({ archiveOpen: true }, 'archive');
+            document.body.classList.add('modal-open');
             activeFilterTag = 'archived'; 
             renderFilterBar(); 
 
@@ -2678,6 +2679,7 @@ const gapiClientCallback = (resp) => {
 
         const hideArchiveView = () => {
             const archiveView = document.getElementById('archive-view');
+            document.body.classList.remove('modal-open');
             archiveView.classList.remove('show');
             if (activeFilterTag === 'archived') {
                 activeFilterTag = null;

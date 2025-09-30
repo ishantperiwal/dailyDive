@@ -955,10 +955,7 @@
             cursor: pointer;
             line-height: 1;
             padding: 0;
-            transition: transform 0.2s ease;
-        }
-        .close-archive-btn:hover {
-            transform: rotate(90deg);
+            transition: color 0.2s ease;
         }
 
         body.is-mobile .archive-header {
@@ -1258,11 +1255,11 @@
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-         /* 
+         /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-       */
+       */ 
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -2190,7 +2187,9 @@ const gapiClientCallback = (resp) => {
                     const timeAgo = document.createElement('div');
                     timeAgo.className = 'time-ago';
                     const completionDate = new Date(task.completedAt);
-                    timeAgo.textContent = `Completed on ${completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+                    const daysTaken = calculateActiveDays(task);
+                    const dateString = completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    timeAgo.textContent = `Completed in ${daysTaken} day${daysTaken !== 1 ? 's' : ''} on ${dateString}`;
                     taskContent.appendChild(timeAgo);
 
                     const textDisplay = document.createElement('div');

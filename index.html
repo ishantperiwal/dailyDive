@@ -1071,6 +1071,16 @@
             height: 164px;
         }
     </style>
+    <script>
+        // Apply mobile-specific styles immediately to prevent flash of unstyled content
+        if (/Mobi/i.test(navigator.userAgent)) {
+            const style = document.createElement('style');
+            style.textContent = `
+                ::-webkit-scrollbar { display: none; }
+                body { -ms-overflow-style: none; scrollbar-width: none; }`;
+            document.head.appendChild(style);
+        }
+    </script>
 </head>
 <body>
     <div id="splash-screen">

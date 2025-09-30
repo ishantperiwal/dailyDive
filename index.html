@@ -594,18 +594,15 @@
             z-index: 6;
         }
         .sticker-link {
-            font-size: 20px;
+            font-size: 22px; /* Increased by 10% from 20px */
             text-decoration: none;
             transition: transform 0.2s ease;
-            /* Add a class for tap feedback on mobile */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
-        @media (hover: hover) {
-            .sticker-link:hover {
-                transform: scale(1.3);
-            }
-        }
-        .sticker-link.is-tapped {
-            transform: scale(1.3) !important;
+        .sticker-link:active {
+            transform: scale(0.8);
         }
         .task-item.drag-over {
             border: 2px dashed var(--accent-color);
@@ -1209,11 +1206,11 @@
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-        /* 
+       /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-        */
+         */ 
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -1925,8 +1922,8 @@ const gapiClientCallback = (resp) => {
                 const attachmentDisplay = document.createElement('div');
                 attachmentDisplay.className = 'sticker-display-area'; 
                 if (task.attachments) {
-                    const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="20" height="20">`;
-                    const jiraIconHTML = `<img src="jira.png" alt="Jira Icon" width="20" height="20">`;
+                    const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="22" height="22">`;
+                    const jiraIconHTML = `<img src="jira.png" alt="Jira Icon" width="22" height="22">`;
                     task.attachments.forEach((attachment, attachmentIndex) => {
                         const attachmentLink = document.createElement('a');
                         attachmentLink.className = 'sticker-link';
@@ -1942,25 +1939,22 @@ const gapiClientCallback = (resp) => {
                         
                         const handlePressStart = (e) => {
                             e.stopPropagation();
-                            clearTimeout(longPressTimer);
-                            if (isMobileDevice) e.currentTarget.classList.add('is-tapped');
+                            clearTimeout(longPressTimer);                           
                             longPressTimer = setTimeout(() => {
                                 const icon = attachmentLink.innerHTML;
                                 showConfirmationModal(icon, 'Are you sure you want to delete this attachment?', () => deleteAttachment(task.id, attachmentIndex));
                             }, LONG_PRESS_DURATION);
                         };
-
                         const handlePressEnd = (e) => {
                             e.stopPropagation();
                             clearTimeout(longPressTimer);
-                            if (isMobileDevice) e.currentTarget.classList.remove('is-tapped');
                         };
-
                         attachmentLink.addEventListener('mousedown', handlePressStart);
                         attachmentLink.addEventListener('touchstart', handlePressStart, { passive: true });
                         attachmentLink.addEventListener('mouseup', handlePressEnd);
                         attachmentLink.addEventListener('mouseleave', handlePressEnd);
                         attachmentLink.addEventListener('touchend', handlePressEnd);
+                        attachmentLink.addEventListener('touchcancel', handlePressEnd);
 
                         attachmentLink.onclick = (e) => {
                              if (longPressTimer) {
@@ -2141,8 +2135,8 @@ const gapiClientCallback = (resp) => {
                     const attachmentDisplay = document.createElement('div');
                     attachmentDisplay.className = 'sticker-display-area'; 
                     if (task.attachments) {
-                        const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="20" height="20">`;
-                        const jiraIconHTML = `<img src="jira.png" alt="Jira Icon" width="20" height="20">`;
+                        const figmaIconHTML = `<img src="figma.png" alt="Figma Icon" width="22" height="22">`;
+                        const jiraIconHTML = `<img src="jira.png" alt="Jira Icon" width="22" height="22">`;
                         task.attachments.forEach(attachment => {
                             const attachmentLink = document.createElement('a');
                             attachmentLink.className = 'sticker-link';

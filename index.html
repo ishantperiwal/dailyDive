@@ -3456,7 +3456,11 @@ const gapiClientCallback = (resp) => {
                     if (!archiveView.classList.contains('show')) {
                         showArchiveView();
                         archiveView.addEventListener('transitionend', () => {
-                            renderTasks(); // Re-render main view in background to show all tasks
+                            if (currentView === 'calendar') {
+                                renderCalendar(); // Re-render calendar view in background
+                            } else {
+                                renderTasks(); // Re-render list view in background
+                            }
                         }, { once: true });
                     }
                     return;

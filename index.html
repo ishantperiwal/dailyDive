@@ -597,9 +597,15 @@
             font-size: 20px;
             text-decoration: none;
             transition: transform 0.2s ease;
+            /* Add a class for tap feedback on mobile */
         }
-        .sticker-link:hover {
-            transform: scale(1.3);
+        @media (hover: hover) {
+            .sticker-link:hover {
+                transform: scale(1.3);
+            }
+        }
+        .sticker-link.is-tapped {
+            transform: scale(1.3) !important;
         }
         .task-item.drag-over {
             border: 2px dashed var(--accent-color);
@@ -1937,6 +1943,7 @@ const gapiClientCallback = (resp) => {
                         const handlePressStart = (e) => {
                             e.stopPropagation();
                             clearTimeout(longPressTimer);
+                            if (isMobileDevice) e.currentTarget.classList.add('is-tapped');
                             longPressTimer = setTimeout(() => {
                                 const icon = attachmentLink.innerHTML;
                                 showConfirmationModal(icon, 'Are you sure you want to delete this attachment?', () => deleteAttachment(task.id, attachmentIndex));
@@ -1946,6 +1953,7 @@ const gapiClientCallback = (resp) => {
                         const handlePressEnd = (e) => {
                             e.stopPropagation();
                             clearTimeout(longPressTimer);
+                            if (isMobileDevice) e.currentTarget.classList.remove('is-tapped');
                         };
 
                         attachmentLink.addEventListener('mousedown', handlePressStart);
@@ -2147,6 +2155,7 @@ const gapiClientCallback = (resp) => {
                             }
                             attachmentLink.href = attachment.url;
                             attachmentLink.target = '_blank';
+                            attachmentLink.addEventListener('click', (e) => e.stopPropagation());
                             attachmentDisplay.appendChild(attachmentLink);
                         });
                     }

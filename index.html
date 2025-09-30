@@ -1206,11 +1206,11 @@
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-        /* 
+         /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-        */
+       */ 
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -2777,8 +2777,11 @@ const gapiClientCallback = (resp) => {
             autoGrow(urlInput);
             setTimeout(() => {
                 modal.classList.add('show');
-                urlInput.focus();
-            }, 10);
+                setTimeout(() => {
+                    urlInput.focus();
+                    urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+            }, 10); // Small delay to allow display:flex to apply
         };
 
         const hideAttachmentModal = () => {

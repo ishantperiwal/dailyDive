@@ -391,6 +391,18 @@
             animation: cardBounce 0.6s ease-in-out;
         }
 
+        @keyframes taskBarBlink {
+            0%, 50%, 100% {
+                opacity: 1;
+            }
+            25%, 75% {
+                opacity: 0.4;
+            }
+        }
+        .task-bar-edited-animation {
+            animation: taskBarBlink 0.8s ease-in-out;
+        }
+
         .time-ago { font-size: 12px; color: rgba(0,0,0,0.5); margin-bottom: 8px; }
         .modal-note { width: 440px; max-width: 95vw; background-color: #fffc79; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); border-radius: 12px; display: flex; flex-direction: column; max-height: 80vh; }
 
@@ -1254,11 +1266,11 @@
     (function() {
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
-      
+     
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-         /*
+          /*
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
@@ -2511,6 +2523,7 @@ const gapiClientCallback = (resp) => {
                     const span = (barEndDate.getTime() - segmentStart.getTime()) / 86400000 + 1;
                     const taskBar = document.createElement('div');
                     taskBar.className = 'task-bar';
+                    taskBar.dataset.taskId = task.id; // Set the task ID here
                     if (task.completedAt) {
                         taskBar.classList.add('completed');
                     }
@@ -2545,12 +2558,12 @@ const gapiClientCallback = (resp) => {
             return gridContentWrapper;
         };
 
-        const renderCalendar = () => {
+        const renderCalendar = (editedTaskId = null) => {
             renderFilterBar();
             const slider = document.getElementById('calendar-slider');
             slider.style.transition = 'none';
             slider.style.transform = 'translateX(-33.3333%)';
-            const tasksToRender = getFilteredTasks();
+            const tasksToRender = getFilteredTasks().filter(t => !t.archived);
             renderSingleMonth(document.getElementById('current-month-grid'), calendarDate, tasksToRender);
             const prevDate = new Date(calendarDate);
             prevDate.setMonth(prevDate.getMonth() - 1);
@@ -2558,6 +2571,15 @@ const gapiClientCallback = (resp) => {
             nextDate.setMonth(nextDate.getMonth() + 1);
             prepareLoadingState(document.getElementById('prev-month-grid'), prevDate);
             prepareLoadingState(document.getElementById('next-month-grid'), nextDate);
+
+            if (editedTaskId) {
+                document.querySelectorAll(`.task-bar[data-task-id="${editedTaskId}"]`).forEach(bar => {
+                    bar.classList.add('task-bar-edited-animation');
+                    bar.addEventListener('animationend', () => {
+                        bar.classList.remove('task-bar-edited-animation');
+                    }, { once: true });
+                });
+            }
             setTimeout(() => { slider.style.transition = ''; }, 50);
         };
 
@@ -3016,10 +3038,10 @@ const gapiClientCallback = (resp) => {
             // Defer the data save and re-render to allow the close animation to complete smoothly.
             setTimeout(() => {
                 saveData();
-                if (isNewTask) {
-                    renderTasks(true, taskIdForAnimation);
+                if (currentView === 'list') {
+                    renderTasks(true, isNewTask ? taskIdForAnimation : null, isNewTask ? null : taskIdForAnimation);
                 } else {
-                    renderTasks(false, null, taskIdForAnimation);
+                    renderCalendar(taskIdForAnimation);
                 }
             }, 350); // A safe buffer after the 300ms mobile transition.
         };
@@ -3058,7 +3080,11 @@ const gapiClientCallback = (resp) => {
             // Defer the data save and re-render to allow the close animation to complete smoothly.
             setTimeout(() => {
                 saveData();
-                renderTasks(true, null, editingTaskId);
+                if (currentView === 'list') {
+                    renderTasks(true, null, editingTaskId);
+                } else {
+                    renderCalendar(editingTaskId);
+                }
             }, 350); // A safe buffer after the 300ms mobile transition.
         };
 
@@ -3744,3 +3770,4 @@ const gapiClientCallback = (resp) => {
     </script>
 </body>
 </html>
+

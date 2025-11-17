@@ -1750,7 +1750,8 @@ const gapiClientCallback = (resp) => {
 
                 try {
                     // 3. Read all data from the public sheet
-                    const range = `${config.sheetName}!A:B`; // Assuming Title in Col A, Start Date in Col B
+                   // MODIFIED: Start reading from row 2 to ignore headers in row 1.
+                    const range = `${config.sheetName}!A2:B`; // Assuming Title in Col A, Start Date in Col B
                     const response = await gapi.client.sheets.spreadsheets.values.get({
                         spreadsheetId: config.spreadsheetId,
                         range: range,

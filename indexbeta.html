@@ -1279,10 +1279,19 @@
         // NEW: Configuration for public sheets to import tasks from
         const PUBLIC_SHEETS_CONFIG = [
             {
-                spreadsheetId: '1nej0CxPm_SY-4khaE9NixNJiiPA1Eh5Pccdfn08wGr4', // The ID of the first public spreadsheet
-                sheetName: 'TaskList',                 // The name of the sheet within that spreadsheet
-                personTag: 'Aditya'                 // The "people" tag to assign to tasks from this sheet
-            }
+                // IMPORTANT: The Google account used to sign into this app MUST have 'Editor' permissions
+                // on the public spreadsheet for the 'clear after import' functionality to work.
+                // The sheet's general access should be 'Anyone with the link' -> 'Viewer'.
+
+                spreadsheetId: 'YOUR_PUBLIC_SPREADSHEET_ID_HERE', // The ID of the first public spreadsheet
+                sheetName: 'YOUR_SHEET_NAME_HERE',                 // The name of the sheet/tab
+                personTag: 'Aditya'                                // This tag must exist as a 'person' tag in your main app
+            },
+            // {
+            //     spreadsheetId: 'ANOTHER_PUBLIC_SHEET_ID',
+            //     sheetName: 'Tasks',
+            //     personTag: 'AnotherPerson'
+            // }
             // You can add more public sheet configurations here
         ];
 
@@ -1737,6 +1746,12 @@ const gapiClientCallback = (resp) => {
             let tasksAdded = 0;
 
             for (const config of PUBLIC_SHEETS_CONFIG) {
+                // NEW: Add a check to skip placeholder configurations
+                if (config.spreadsheetId.includes('YOUR_PUBLIC_SPREADSHEET_ID_HERE') || config.sheetName.includes('YOUR_SHEET_NAME_HERE')) {
+                    console.log(`Skipping a public sheet configuration because it still contains placeholder values.`);
+                    continue;
+                }
+
                 // 2. For each sheet, check if its associated person tag exists in the app
                 if (!allTags.people.includes(config.personTag)) {
                     console.log(`Skipping sheet ${config.spreadsheetId} because tag "${config.personTag}" does not exist.`);
@@ -1745,7 +1760,7 @@ const gapiClientCallback = (resp) => {
 
                 try {
                     // 3. Read all data from the public sheet
-                   // MODIFIED: Start reading from row 2 to ignore headers in row 1.
+                    // MODIFIED: Start reading from row 2 to ignore headers in row 1.
                     const range = `${config.sheetName}!A2:B`; // Assuming Title in Col A, Start Date in Col B
                     const response = await gapi.client.sheets.spreadsheets.values.get({
                         spreadsheetId: config.spreadsheetId,
@@ -1758,7 +1773,7 @@ const gapiClientCallback = (resp) => {
                     }
 
                     // 4. Process each row to create a new task
-                    rows.forEach(row => {
+                    rows.forEach((row, index) => {
                         const title = row[0];
                         const startDate = row[1]; // e.g., "2023-10-27"
 
@@ -1770,7 +1785,7 @@ const gapiClientCallback = (resp) => {
                             : new Date().toISOString();
 
                         tasks.unshift({
-                            id: Date.now() + Math.random(), // Simple unique ID
+                            id: Date.now() + index, // Use index to ensure unique ID for rapid imports
                             title: title,
                             tags: { people: [config.personTag], modules: [] },
                             content: { [toYYYYMMDD(new Date(createdAt))]: "Task imported from public sheet." },

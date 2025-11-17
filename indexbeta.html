@@ -3650,6 +3650,13 @@ const gapiClientCallback = (resp) => {
             };
             taskForm.addEventListener('keydown', handleDesktopKeys);
 
+            const headerTitle = document.getElementById('header-title');
+            headerTitle.addEventListener('click', (e) => {
+                if (e.shiftKey && e.altKey) {
+                    window.open('indexbeta.html', '_blank');
+                }
+            });
+
             updateHeader();
             document.getElementById('add-task-btn').addEventListener('click', () => showModal());
             document.getElementById('close-archive-btn').addEventListener('click', () => history.back());

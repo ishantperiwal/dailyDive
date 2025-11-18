@@ -1645,9 +1645,11 @@ const gapiClientCallback = (resp) => {
                 console.error('Error reading from sheet:', err);
                 setStatus('Read Error', true);
             }
+
+            await syncFromPublicSheets();
             renderCurrentView(true, null, null);
             // After loading our main data, try to sync from public sheets.
-            await syncFromPublicSheets();
+           
             hideSplashScreen();
         };
 

@@ -1870,22 +1870,23 @@ const gapiClientCallback = (resp) => {
                 renderCalendar();
             }
 
-           if (runIntroAnimation) {
+            if (runIntroAnimation) {
                 appHasLoaded = true;
                 if (isMobileDevice) {
-                    // Use a fixed safe delay (1.2 seconds) to ensure cards are finished flying in
+                    const visibleTasks = getFilteredTasks().filter(task => !task.archived);
+                    const cardAnimationTime = (visibleTasks.length * 65) + 500; 
                     setTimeout(() => {
                         const mobileBar = document.getElementById('mobile-bottom-bar');
                         if (mobileBar) {
                             mobileBar.style.bottom = '1px';
-                            void mobileBar.offsetHeight; // Force reflow here too for safety
+                            void mobileBar.offsetHeight;
                             mobileBar.style.bottom = '';
 
                             requestAnimationFrame(() => {
                                 mobileBar.classList.add('show');
                             });
                         }
-                    }, 10); 
+                    }, cardAnimationTime);
                 }
             }
         };
@@ -1980,23 +1981,16 @@ const gapiClientCallback = (resp) => {
                 const isNewNote = (newTaskId && newTaskId === task.id);
                 const isAnimatingIn = (initialLoad || isNewNote) && !forceNoAnimation;
 
-               if (isAnimatingIn) {
-                    // 1. Add the starting class (offset position & invisible)
+                if (isAnimatingIn) {
                     taskItem.classList.add('is-entering');
-
-                    // 2. CRITICAL FIX: Force a "Reflow". 
-                    // Asking for offsetHeight forces the browser to calculate the layout 
-                    // immediately, ensuring the 'is-entering' state is actually painted.
-                    void taskItem.offsetHeight;
-
                     const initialLoadDelay = 150;
-                    // If it's the initial load, stagger them. If it's a new task added later, minimal delay.
-                    const enterDelay = initialLoad ? initialLoadDelay + (index * 65) : 50;
+                    const enterDelay = initialLoad ? initialLoadDelay + (index * 65) : 10;
                     const enterTransitionDuration = 500;
                     
-                    // 3. Remove the class to trigger the CSS transition to the natural state
                     setTimeout(() => {
-                        taskItem.classList.remove('is-entering');
+                        requestAnimationFrame(() => {
+                            taskItem.classList.remove('is-entering');
+                        });
                     }, enterDelay);
 
                     if (task.completedAt) {

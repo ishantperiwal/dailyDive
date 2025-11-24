@@ -223,7 +223,7 @@
             transform: rotate(0deg) scale(1.03) translateY(-5px) !important;
             transition-duration: 0.25s;
         }
-        .task-content { 
+       .task-content { 
             padding: 20px 22px; 
             font-size: 18px; 
             line-height: 1.5; 
@@ -237,7 +237,9 @@
             border: none; 
             display: flex; 
             flex-direction: column; 
-            overflow: hidden; /* Prevents text from pushing tags down */
+            overflow: hidden; 
+            /* ADDED: Helps browser distinguish scroll vs swipe */
+            touch-action: pan-y; 
         }
         .task-item.completed, .task-item.hibernated { opacity: 0.7; }
         .task-item.completed .task-content { color: rgba(0, 0, 0, 0.5); cursor: default; }
@@ -3346,8 +3348,14 @@ const gapiClientCallback = (resp) => {
             }
         };
 
-        const onDragMove = (clientX, clientY) => {
+       const onDragMove = (e, clientX, clientY) => {
             if (!isDragging || !targetTaskElement) return;
+            
+            // If we have locked onto horizontal dragging, prevent the browser from scrolling
+            if (dragDirectionLock === 'horizontal') {
+                if (e.cancelable) e.preventDefault(); 
+            }
+
             currentX = clientX;
             currentY = clientY;
             let diffX = currentX - startX;
@@ -3359,11 +3367,15 @@ const gapiClientCallback = (resp) => {
             }
 
             if (!dragDirectionLock && !isClick) {
+                // Axis locking logic: 
+                // If horizontal movement is greater than vertical, lock horizontal
                 if (Math.abs(diffY) > Math.abs(diffX)) {
                     dragDirectionLock = 'vertical';
                 } else {
                     dragDirectionLock = 'horizontal';
                     targetTaskElement.classList.add('is-interacting');
+                    // Prevent default immediately upon locking horizontal
+                    if (e.cancelable) e.preventDefault();
                 }
             }
             
@@ -3757,7 +3769,12 @@ const gapiClientCallback = (resp) => {
             taskListView.addEventListener('dblclick', (e) => { if (e.target === taskListView) showModal(); });
             document.addEventListener('mousemove', (e) => { handleAttachmentMove(e.clientX, e.clientY); });
             document.addEventListener('mouseup', (e) => { handleAttachmentDrop(); });
-            document.addEventListener('touchmove', (e) => { if (!isDraggingAttachment) return; e.preventDefault(); const touch = e.touches[0]; handleAttachmentMove(touch.clientX, touch.clientY); }, { passive: false });
+           document.addEventListener('touchmove', (e) => {
+                // We only need to run this logic if we are actually dragging a task
+                if (isDragging) {
+                    onDragMove(e, e.touches[0].clientX, e.touches[0].clientY);
+                }
+            }, { passive: false });
             document.addEventListener('touchend', (e) => { handleAttachmentDrop(); });
 
             let calendarTouchStartX = 0, calendarTouchStartY = 0, calendarDragCurrentX = 0, calendarDragCurrentY = 0, isCalendarDragging = false, calendarDragDirectionLock = null;

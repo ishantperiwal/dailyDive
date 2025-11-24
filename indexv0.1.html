@@ -1267,14 +1267,33 @@
         // --- GOOGLE SHEETS API CONFIG ---
         // !!! IMPORTANT SECURITY WARNING !!!
      
+      
        const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-          /*
+        /* 
         const API_KEY = ''; // Your Google API Key
         const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
         const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
         */
+        // NEW: Configuration for public sheets to import tasks from
+        const PUBLIC_SHEETS_CONFIG = [
+            {
+                // IMPORTANT: The Google account used to sign into this app MUST have 'Editor' permissions
+                // on the public spreadsheet for the 'clear after import' functionality to work.
+                // The sheet's general access should be 'Anyone with the link' -> 'Viewer'.
+
+                spreadsheetId: '1nej0CxPm_SY-4khaE9NixNJiiPA1Eh5Pccdfn08wGr4', // The ID of the first public spreadsheet
+                sheetName: 'TaskList',                 // The name of the sheet/tab
+                personTag: 'Aditya'                                // This tag must exist as a 'person' tag in your main app
+            },
+             {
+                 spreadsheetId: '1lu1jyouEY0b7Q5A45-qfu7OMY-WECkpo8A6X_iPSil4',
+                 sheetName: 'TaskList',
+                 personTag: 'Atharva'
+             }
+            // You can add more public sheet configurations here
+        ];
 
         
         const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
@@ -1626,7 +1645,11 @@ const gapiClientCallback = (resp) => {
                 console.error('Error reading from sheet:', err);
                 setStatus('Read Error', true);
             }
+
+            await syncFromPublicSheets();
             renderCurrentView(true, null, null);
+            // After loading our main data, try to sync from public sheets.
+           
             hideSplashScreen();
         };
 
@@ -1712,6 +1735,95 @@ const gapiClientCallback = (resp) => {
         }
     }
 };
+
+        const syncFromPublicSheets = async () => {
+            if (!isAuthorized) return;
+
+            // 1. Check if any public sheets are configured
+            if (!PUBLIC_SHEETS_CONFIG || PUBLIC_SHEETS_CONFIG.length === 0) {
+                return;
+            }
+
+            console.log('Starting sync from public sheets...');
+            let tasksAdded = 0;
+
+            for (const config of PUBLIC_SHEETS_CONFIG) {
+                // NEW: Add a check to skip placeholder configurations
+                if (config.spreadsheetId.includes('YOUR_PUBLIC_SPREADSHEET_ID_HERE') || config.sheetName.includes('YOUR_SHEET_NAME_HERE')) {
+                    console.log(`Skipping a public sheet configuration because it still contains placeholder values.`);
+                    continue;
+                }
+
+                // 2. For each sheet, check if its associated person tag exists in the app
+                if (!allTags.people.includes(config.personTag)) {
+                    console.log(`Skipping sheet ${config.spreadsheetId} because tag "${config.personTag}" does not exist.`);
+                    continue;
+                }
+
+                try {
+                    // 3. Read all data from the public sheet
+                    // MODIFIED: Start reading from row 2 to ignore headers in row 1.
+                    const range = `${config.sheetName}!A2:B`; // Assuming Title in Col A, Start Date in Col B
+                    const response = await gapi.client.sheets.spreadsheets.values.get({
+                        spreadsheetId: config.spreadsheetId,
+                        range: range,
+                    });
+
+                    const rows = response.result.values;
+                    if (!rows || rows.length === 0) {
+                        continue; // Skip if the sheet is empty
+                    }
+
+                    // 4. Process each row to create a new task
+                    rows.forEach((row, index) => {
+                        const title = row[0];
+                        const startDate = row[1]; // e.g., "2023-10-27"
+
+                        if (!title || !startDate) return; // Skip invalid rows
+
+                        // Create a valid date object, or default to today
+                        const createdAt = new Date(startDate).toString() !== 'Invalid Date' 
+                            ? new Date(startDate).toISOString() 
+                            : new Date().toISOString();
+
+                        tasks.unshift({
+                            id: Date.now() + index, // Use index to ensure unique ID for rapid imports
+                            title: title,
+                            tags: { people: [config.personTag], modules: [] },
+                            content: { [toYYYYMMDD(new Date(createdAt))]: "Task imported from public sheet." },
+                            createdAt: createdAt,
+                            completedAt: null,
+                            archived: false,
+                            attachments: [],
+                            hibernationPeriods: []
+                        });
+                        tasksAdded++;
+                    });
+
+                    // 5. If tasks were added, clear the public sheet
+                    if (rows.length > 0) {
+                        await gapi.client.sheets.spreadsheets.values.clear({
+                            spreadsheetId: config.spreadsheetId,
+                            range: range,
+                        });
+                        console.log(`Cleared ${rows.length} rows from sheet: ${config.spreadsheetId}`);
+                    }
+                } catch (err) {
+                    console.error(`Error syncing from public sheet ${config.spreadsheetId}:`, err);
+                    setStatus(`Sync Error: ${config.personTag}`, true);
+                }
+            }
+
+            // 6. If any tasks were added, save the new state to your main sheet and re-render
+            if (tasksAdded > 0) {
+                console.log(`Added ${tasksAdded} new tasks. Saving...`);
+                setStatus(`${tasksAdded} new task(s) imported!`);
+                await saveData(); // Use await to ensure it saves before re-rendering
+                renderCurrentView(false, null, null);
+            } else {
+                console.log('No new tasks to sync from public sheets.');
+            }
+        };
 
         const isTaskHibernated = (task) => {
             if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) {
@@ -3557,7 +3669,7 @@ const gapiClientCallback = (resp) => {
                     window.open('indexbeta.html', '_blank');
                 }
             });
-            
+
             updateHeader();
             document.getElementById('add-task-btn').addEventListener('click', () => showModal());
             document.getElementById('close-archive-btn').addEventListener('click', () => history.back());

@@ -4204,23 +4204,30 @@
                 }
             };
 
-            const handleAttachmentMove = (x, y) => {
-                if (!isDraggingAttachment) return;
-                updateGhostPosition(x, y);
-                if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'none';
-                const elementUnder = document.elementFromPoint(x, y);
-                if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'block';
-                if (lastTouchTarget && lastTouchTarget !== elementUnder) {
-                    lastTouchTarget.classList.remove('drag-over');
-                }
-                const taskItem = elementUnder ? elementUnder.closest('.task-item') : null;
-                if (taskItem) {
-                    taskItem.classList.add('drag-over');
-                    lastTouchTarget = taskItem;
-                } else {
-                    lastTouchTarget = null;
-                }
-            };
+          const handleAttachmentMove = (x, y) => {
+    if (!isDraggingAttachment) return;
+    updateGhostPosition(x, y);
+
+    // Temporarily hide ghost so elementFromPoint sees what is UNDER it
+    if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'none';
+    
+    const elementUnder = document.elementFromPoint(x, y);
+    
+    // Show ghost again immediately
+    if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'block';
+
+    if (lastTouchTarget && lastTouchTarget !== (elementUnder ? elementUnder.closest('.task-item') : null)) {
+        lastTouchTarget.classList.remove('drag-over');
+    }
+
+    const taskItem = elementUnder ? elementUnder.closest('.task-item') : null;
+    if (taskItem) {
+        taskItem.classList.add('drag-over');
+        lastTouchTarget = taskItem;
+    } else {
+        lastTouchTarget = null;
+    }
+};
 
             const handleAttachmentDrop = () => {
                 if (!isDraggingAttachment) return;
@@ -4491,12 +4498,24 @@
                 document.addEventListener('mousemove', (e) => { handleAttachmentMove(e.clientX, e.clientY); });
                 document.addEventListener('mouseup', (e) => { handleAttachmentDrop(); });
                 document.addEventListener('touchmove', (e) => {
-                    // We only need to run this logic if we are actually dragging a task
-                    if (isDragging) {
-                        onDragMove(e, e.touches[0].clientX, e.touches[0].clientY);
-                    }
-                }, { passive: false });
-                document.addEventListener('touchend', (e) => { handleAttachmentDrop(); });
+    const touch = e.touches[0];
+    if (isDragging) {
+        // Handle task swiping/sliding
+        onDragMove(e, touch.clientX, touch.clientY);
+    } else if (isDraggingAttachment) {
+        // Handle orb/sticker dragging
+        // preventDefault is crucial here to stop the page from scrolling while dragging the orb
+        if (e.cancelable) e.preventDefault(); 
+        handleAttachmentMove(touch.clientX, touch.clientY);
+    }
+}, { passive: false }); // passive: false is required to allow e.preventDefault()
+
+document.addEventListener('touchend', (e) => {
+    if (isDraggingAttachment) {
+        handleAttachmentDrop();
+    }
+    onDragEnd(); // Ensure task dragging also cleans up
+});
 
                 let calendarTouchStartX = 0, calendarTouchStartY = 0, calendarDragCurrentX = 0, calendarDragCurrentY = 0, isCalendarDragging = false, calendarDragDirectionLock = null;
 

@@ -672,6 +672,21 @@
             color: white;
         }
 
+        .modal-btn#modal-back-btn {
+            background-color: transparent;
+            color: #555;
+            box-shadow: none;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-btn#modal-back-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            transform: scale(1.1);
+        }
+
         .is-entering {
             opacity: 0;
             transform: translateY(-60px) scale(1.1) rotate(var(--start-rotation-deg));
@@ -1300,53 +1315,33 @@
             flex-basis: 1px;
         }
 
-       body.is-mobile #modal-container {
-    align-items: flex-start; /* Align to top instead of bottom */
-}
 
-        body.is-mobile #modal-note-content {
-    flex-grow: 1;
-    padding: env(safe-area-inset-top) 25px 20px 25px; /* Account for notches */
-}
 
-        .dismiss-modal-btn {
-    display: none; /* Hidden by default on desktop */
-}
-
-        body.is-mobile .dismiss-modal-btn {
-    display: block;
-    width: 100%;
-    background: transparent;
-    border: none;
-    color: #666;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 15px 0;
-    cursor: pointer;
-    text-decoration: underline;
-    margin-top: 10px;
-}
-
-body.is-mobile .modal-content {
-    width: 100%;
-    height: 100%; /* Force full height */
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-body.is-mobile .modal-note {
-    border-radius: 0; /* Remove rounded corners for full-screen look */
-    height: 100%; /* Ensure the note area fills the screen */
-    max-height: 100vh;
-    width: 100%;
-    max-width: 100%;
-}
+        body.is-mobile .modal-content {
+            width: 100%;
+            height: 100%;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
 
         body.is-mobile #modal-container.show .modal-content {
             transform: translateY(0);
         }
 
-       
+        body.is-mobile #task-form {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.is-mobile .modal-note {
+            border-radius: 0;
+            flex-grow: 1;
+            max-height: none;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
 
         body.is-mobile .modal-controls {
             padding: 10px 20px 20px 20px;
@@ -1361,9 +1356,23 @@ body.is-mobile .modal-note {
             flex-shrink: 0;
         }
 
+        body.is-mobile #modal-back-btn {
+            background-color: transparent;
+            color: #555;
+            box-shadow: none;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         body.is-mobile #confirm-add-btn {
-            width: 100%;
-            border-radius: 12px;
+            width: auto;
+            flex-grow: 1;
+            border-radius: 42px;
             height: 50px;
             margin: 0;
         }
@@ -1900,10 +1909,15 @@ body.is-mobile .modal-note {
                     </div>
                 </div>
                 <div class="modal-controls">
-                    <button id="hibernate-btn" class="modal-btn" type="button">💤</button>
+                    <button id="modal-back-btn" class="modal-btn" type="button">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
                     <button id="confirm-add-btn" class="modal-btn" type="submit">&#10003;</button>
+                    <button id="hibernate-btn" class="modal-btn" type="button">💤</button>
                 </div>
-                <button type="button" class="dismiss-modal-btn" id="dismiss-modal-btn">Dismiss</button>
             </form>
         </div>
     </div>
@@ -1955,12 +1969,12 @@ body.is-mobile .modal-note {
             // --- GOOGLE SHEETS API CONFIG ---
             // !!! IMPORTANT SECURITY WARNING !!!
 
-            
+           
                         const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
                         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
                         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
                          
-             /*           
+                /*         
             const API_KEY = ''; // Your Google API Key
             const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
             const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
@@ -4230,30 +4244,23 @@ body.is-mobile .modal-note {
                 }
             };
 
-          const handleAttachmentMove = (x, y) => {
-    if (!isDraggingAttachment) return;
-    updateGhostPosition(x, y);
-
-    // Temporarily hide ghost so elementFromPoint sees what is UNDER it
-    if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'none';
-    
-    const elementUnder = document.elementFromPoint(x, y);
-    
-    // Show ghost again immediately
-    if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'block';
-
-    if (lastTouchTarget && lastTouchTarget !== (elementUnder ? elementUnder.closest('.task-item') : null)) {
-        lastTouchTarget.classList.remove('drag-over');
-    }
-
-    const taskItem = elementUnder ? elementUnder.closest('.task-item') : null;
-    if (taskItem) {
-        taskItem.classList.add('drag-over');
-        lastTouchTarget = taskItem;
-    } else {
-        lastTouchTarget = null;
-    }
-};
+            const handleAttachmentMove = (x, y) => {
+                if (!isDraggingAttachment) return;
+                updateGhostPosition(x, y);
+                if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'none';
+                const elementUnder = document.elementFromPoint(x, y);
+                if (draggedAttachmentGhost) draggedAttachmentGhost.style.display = 'block';
+                if (lastTouchTarget && lastTouchTarget !== elementUnder) {
+                    lastTouchTarget.classList.remove('drag-over');
+                }
+                const taskItem = elementUnder ? elementUnder.closest('.task-item') : null;
+                if (taskItem) {
+                    taskItem.classList.add('drag-over');
+                    lastTouchTarget = taskItem;
+                } else {
+                    lastTouchTarget = null;
+                }
+            };
 
             const handleAttachmentDrop = () => {
                 if (!isDraggingAttachment) return;
@@ -4396,9 +4403,6 @@ body.is-mobile .modal-note {
                 const header = document.querySelector('header');
                 const headerTopRow = document.querySelector('.header-top-row');
 
-
-                
-                
                 headerTopRow.addEventListener('click', () => {
                     if (isMobileDevice) {
                         header.classList.toggle('filters-visible');
@@ -4437,13 +4441,9 @@ body.is-mobile .modal-note {
                 });
 
                 updateHeader();
-
-                document.getElementById('dismiss-modal-btn').addEventListener('click', () => {
-    history.back(); // This triggers your existing popstate logic to close the modal
-});
-                
                 document.getElementById('add-task-btn').addEventListener('click', () => showModal());
                 document.getElementById('close-archive-btn').addEventListener('click', () => history.back());
+                document.getElementById('modal-back-btn').addEventListener('click', () => history.back());
                 document.getElementById('hibernate-btn').addEventListener('click', toggleHibernation);
                 taskForm.addEventListener('submit', (e) => {
                     e.preventDefault();
@@ -4532,24 +4532,16 @@ body.is-mobile .modal-note {
                 document.addEventListener('mousemove', (e) => { handleAttachmentMove(e.clientX, e.clientY); });
                 document.addEventListener('mouseup', (e) => { handleAttachmentDrop(); });
                 document.addEventListener('touchmove', (e) => {
-    const touch = e.touches[0];
-    if (isDragging) {
-        // Handle task swiping/sliding
-        onDragMove(e, touch.clientX, touch.clientY);
-    } else if (isDraggingAttachment) {
-        // Handle orb/sticker dragging
-        // preventDefault is crucial here to stop the page from scrolling while dragging the orb
-        if (e.cancelable) e.preventDefault(); 
-        handleAttachmentMove(touch.clientX, touch.clientY);
-    }
-}, { passive: false }); // passive: false is required to allow e.preventDefault()
-
-document.addEventListener('touchend', (e) => {
-    if (isDraggingAttachment) {
-        handleAttachmentDrop();
-    }
-    onDragEnd(); // Ensure task dragging also cleans up
-});
+                    // We only need to run this logic if we are actually dragging a task
+                    if (isDragging) {
+                        onDragMove(e, e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                    if (isDraggingAttachment) {
+                        e.preventDefault();
+                        handleAttachmentMove(e.touches[0].clientX, e.touches[0].clientY);
+                    }
+                }, { passive: false });
+                document.addEventListener('touchend', (e) => { handleAttachmentDrop(); });
 
                 let calendarTouchStartX = 0, calendarTouchStartY = 0, calendarDragCurrentX = 0, calendarDragCurrentY = 0, isCalendarDragging = false, calendarDragDirectionLock = null;
 

@@ -1300,28 +1300,53 @@
             flex-basis: 1px;
         }
 
-        body.is-mobile #modal-container {
-            align-items: flex-end;
+       body.is-mobile #modal-container {
+    align-items: flex-start; /* Align to top instead of bottom */
+}
 
-        }
+        body.is-mobile #modal-note-content {
+    flex-grow: 1;
+    padding: env(safe-area-inset-top) 25px 20px 25px; /* Account for notches */
+}
 
-        body.is-mobile .modal-content {
-            width: 100%;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
+        .dismiss-modal-btn {
+    display: none; /* Hidden by default on desktop */
+}
+
+        body.is-mobile .dismiss-modal-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 15px 0;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 10px;
+}
+
+body.is-mobile .modal-content {
+    width: 100%;
+    height: 100%; /* Force full height */
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+body.is-mobile .modal-note {
+    border-radius: 0; /* Remove rounded corners for full-screen look */
+    height: 100%; /* Ensure the note area fills the screen */
+    max-height: 100vh;
+    width: 100%;
+    max-width: 100%;
+}
 
         body.is-mobile #modal-container.show .modal-content {
             transform: translateY(0);
         }
 
-        body.is-mobile .modal-note {
-            border-radius: 20px 20px 0 0;
-            max-height: 85vh;
-            width: 100%;
-            max-width: 100%;
-            box-sizing: border-box;
-        }
+       
 
         body.is-mobile .modal-controls {
             padding: 10px 20px 20px 20px;
@@ -1878,6 +1903,7 @@
                     <button id="hibernate-btn" class="modal-btn" type="button">💤</button>
                     <button id="confirm-add-btn" class="modal-btn" type="submit">&#10003;</button>
                 </div>
+                <button type="button" class="dismiss-modal-btn" id="dismiss-modal-btn">Dismiss</button>
             </form>
         </div>
     </div>
@@ -4370,6 +4396,9 @@
                 const header = document.querySelector('header');
                 const headerTopRow = document.querySelector('.header-top-row');
 
+
+                
+                
                 headerTopRow.addEventListener('click', () => {
                     if (isMobileDevice) {
                         header.classList.toggle('filters-visible');
@@ -4408,6 +4437,11 @@
                 });
 
                 updateHeader();
+
+                document.getElementById('dismiss-modal-btn').addEventListener('click', () => {
+    history.back(); // This triggers your existing popstate logic to close the modal
+});
+                
                 document.getElementById('add-task-btn').addEventListener('click', () => showModal());
                 document.getElementById('close-archive-btn').addEventListener('click', () => history.back());
                 document.getElementById('hibernate-btn').addEventListener('click', toggleHibernation);

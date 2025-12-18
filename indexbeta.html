@@ -1322,6 +1322,8 @@
             height: 100%;
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            /* Prevent modal content itself from scrolling/overshooting */
         }
 
         body.is-mobile #modal-container.show .modal-content {
@@ -1332,21 +1334,52 @@
             height: 100%;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         body.is-mobile .modal-note {
             border-radius: 0;
             flex-grow: 1;
+            height: 100%;
+            /* Ensure it takes available space */
             max-height: none;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Mobile Layout: Pin Title & Footer, Scroll Entries */
+        body.is-mobile #modal-note-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: hidden;
+            padding: 0 25px;
+            /* Keep horizontal padding */
+        }
+
+        body.is-mobile #task-title-input {
+            flex-shrink: 0;
+            /* Keep title fixed size/visible */
+        }
+
+        body.is-mobile #daily-entries-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
         }
 
         body.is-mobile .modal-controls {
             padding: 10px 20px 20px 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
             margin-top: 0;
             background-color: #fffc79;
+            flex-shrink: 0;
+            /* Ensure controls don't shrink */
         }
 
         body.is-mobile #hibernate-btn {
@@ -1974,7 +2007,7 @@
                         const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
                         const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
                          
-                /*         
+             /*            
             const API_KEY = ''; // Your Google API Key
             const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
             const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet

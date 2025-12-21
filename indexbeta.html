@@ -213,6 +213,17 @@
             background-color: #cce9fc;
         }
 
+        .filter-chip--download {
+            display: flex;
+            align-items: center;
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .filter-chip--download:hover {
+            background-color: #bbf7d0;
+        }
+
         .view-toggle {
             position: relative;
             display: flex;
@@ -2787,6 +2798,183 @@
                 archiveChip.dataset.tag = 'archived';
                 if (activeFilterTag === 'archived') archiveChip.classList.add('active');
                 filterBar.appendChild(archiveChip);
+
+                // Download Button
+                const downloadChip = document.createElement('div');
+                downloadChip.className = 'filter-chip filter-chip--download';
+                downloadChip.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+                downloadChip.title = "Export to PDF";
+                downloadChip.onclick = (e) => {
+                    e.stopPropagation();
+                    exportToPDF();
+                };
+                filterBar.appendChild(downloadChip);
+            };
+
+            const exportToPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Helper to calculate total frozen days
+                const calculateFrozenDays = (task) => {
+                    if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) return 0;
+
+                    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+                    const normalizationDate = (dStr) => {
+                        const d = new Date(dStr);
+                        d.setHours(0, 0, 0, 0);
+                        return d.getTime();
+                    };
+
+                    let totalDays = 0;
+                    const todayTs = normalizationDate(new Date());
+
+                    task.hibernationPeriods.forEach(period => {
+                        const startTs = normalizationDate(period.start);
+                        let endTs;
+                        if (period.end) {
+                            endTs = normalizationDate(period.end);
+                        } else {
+                            endTs = todayTs;
+                        }
+                        const diff = Math.max(0, (endTs - startTs) / MS_PER_DAY);
+                        totalDays += diff;
+                    });
+
+                    return Math.floor(totalDays);
+                };
+
+                const isTaskFrozen = (task) => {
+                    if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) return false;
+                    const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
+                    return !lastPeriod.end;
+                };
+
+                // --- Title Page / Header ---
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(22);
+                doc.setTextColor(0, 122, 255); // Accent Color
+                doc.text('DailyDive Data Export', 14, 22);
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
+
+                // --- Context & Definitions for LLM ---
+                let currentY = 38;
+
+                doc.setFontSize(11);
+                doc.setTextColor(0);
+                doc.setFont("helvetica", "bold");
+                doc.text("Context & Definitions:", 14, currentY);
+                currentY += 6;
+
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(60);
+                const definitions = [
+                    "• This document contains user task data for analysis. Use it to understand productivity trends and project status.",
+                    "• Active: Tasks currently in progress and visible in the main view.",
+                    "• Frozen (Paused): Tasks temporarily 'hibernated' to stop the age counter. They are on hold, not abandoned.",
+                    "• Completed: Tasks that have been finished. The completion date is noted.",
+                    "• Archived: Tasks removed from the main view but preserved for history.",
+                    "• Frozen Duration: The total number of days a task has spent in the 'Frozen' state.",
+                    "• Tags: '@' denotes People/Collaborators. '#' denotes Modules/Components."
+                ];
+
+                definitions.forEach(def => {
+                    doc.text(def, 14, currentY);
+                    currentY += 5;
+                });
+
+                currentY += 4; // Spacing before summary
+
+                // --- Summary Props ---
+                const activeTasks = tasks.filter(t => !t.completedAt && !t.archived && !isTaskFrozen(t)).length;
+                const frozenTasks = tasks.filter(t => !t.completedAt && !t.archived && isTaskFrozen(t)).length;
+                const completedTasks = tasks.filter(t => t.completedAt).length;
+
+                // Draw Summary Box
+                doc.setDrawColor(200);
+                doc.setFillColor(245, 247, 250);
+                doc.roundedRect(14, currentY, 180, 24, 3, 3, 'FD');
+
+                doc.setFontSize(12);
+                doc.setTextColor(50);
+                doc.text("Snapshot Summary:", 20, currentY + 7);
+                doc.setFontSize(10);
+                doc.text(`Total Tasks: ${tasks.length}`, 20, currentY + 15);
+                doc.text(`Active: ${activeTasks}`, 60, currentY + 15);
+                doc.text(`Frozen (Paused): ${frozenTasks}`, 100, currentY + 15);
+                doc.text(`Completed: ${completedTasks}`, 150, currentY + 15);
+
+                currentY += 32;
+
+                // --- Global Tags Section ---
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(0, 122, 255);
+                doc.text('Global Tags', 14, currentY);
+                currentY += 6;
+
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(80);
+
+                const peopleText = doc.splitTextToSize(`People: ${allTags.people.join(', ') || 'None'}`, 180);
+                doc.text(peopleText, 14, currentY);
+
+                currentY += (peopleText.length * 5);
+                const modulesText = doc.splitTextToSize(`Modules: ${allTags.modules.join(', ') || 'None'}`, 180);
+                doc.text(modulesText, 14, currentY);
+
+                currentY += (modulesText.length * 5) + 8;
+
+                // --- Table Data Preparation ---
+                const tableData = tasks.map(t => {
+                    const frozenDays = calculateFrozenDays(t);
+                    const isFrozen = isTaskFrozen(t);
+
+                    let status = 'Active';
+                    if (t.archived) status = 'Archived';
+                    else if (t.completedAt) status = `Completed\n${t.completedAt.split('T')[0]}`;
+                    else if (isFrozen) status = 'Frozen (Paused)';
+
+                    const frozenDurationStr = frozenDays > 0 ? `${frozenDays} days` : '-';
+
+                    const tagsStr = [
+                        ...(t.tags.people || []).map(p => `@${p}`),
+                        ...(t.tags.modules || []).map(m => `#${m}`)
+                    ].join(' ');
+
+                    let notes = '';
+                    if (t.content) {
+                        const dates = Object.keys(t.content).sort().reverse();
+                        notes = dates.map(date => `[${date}]\n${t.content[date]}`).join('\n\n');
+                    }
+
+                    return [t.id, t.title, status, frozenDurationStr, tagsStr, notes];
+                });
+
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['ID', 'Title', 'Status', 'Paused Duration', 'Tags', 'Notes History']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: [0, 122, 255] },
+                    styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
+                    columnStyles: {
+                        0: { cellWidth: 12 },
+                        1: { cellWidth: 40, fontStyle: 'bold' },
+                        2: { cellWidth: 25 },
+                        3: { cellWidth: 22, halign: 'center' },
+                        4: { cellWidth: 30 },
+                        5: { cellWidth: 'auto' }
+                    }
+                });
+
+                doc.save('daily-dive-export.pdf');
             };
 
             const renderTasks = (animateLayout = false, newTaskId = null, editedTaskId = null, initialLoad = false, forceNoAnimation = false) => {
@@ -4798,179 +4986,8 @@
                 };
 
                 // PDF Generation Logic
-                document.getElementById('export-pdf-btn').addEventListener('click', () => {
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-
-                    // Helper to calculate total frozen days
-                    const calculateFrozenDays = (task) => {
-                        if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) return 0;
-
-                        const MS_PER_DAY = 1000 * 60 * 60 * 24;
-                        const normalizationDate = (dStr) => {
-                            // Helper to parse YYYY-MM-DD or use Date object, returning timestamp at start of day
-                            const d = new Date(dStr);
-                            d.setHours(0, 0, 0, 0);
-                            return d.getTime();
-                        };
-
-                        let totalDays = 0;
-                        const todayTs = normalizationDate(new Date());
-
-                        task.hibernationPeriods.forEach(period => {
-                            const startTs = normalizationDate(period.start);
-                            let endTs;
-
-                            if (period.end) {
-                                endTs = normalizationDate(period.end);
-                            } else {
-                                // Active hibernation
-                                endTs = todayTs;
-                            }
-
-                            // Diff in days (inclusive or exclusive depending on logic, usually diff + 1 if inclusive)
-                            // Here we treat it as simple day difference
-                            const diff = Math.max(0, (endTs - startTs) / MS_PER_DAY);
-                            totalDays += diff;
-                        });
-
-                        return Math.floor(totalDays);
-                    };
-
-                    const isTaskFrozen = (task) => {
-                        if (!task.hibernationPeriods || task.hibernationPeriods.length === 0) return false;
-                        const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
-                        return !lastPeriod.end; // If no end date, it's currently frozen
-                    };
-
-                    // --- Title Page / Header ---
-                    doc.setFont("helvetica", "bold");
-                    doc.setFontSize(22);
-                    doc.setTextColor(0, 122, 255); // Accent Color
-                    doc.text('DailyDive Data Export', 14, 22);
-
-                    doc.setFont("helvetica", "normal");
-                    doc.setFontSize(10);
-                    doc.setTextColor(100);
-                    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
-
-                    // --- Context & Definitions for LLM ---
-                    let currentY = 38;
-
-                    doc.setFontSize(11);
-                    doc.setTextColor(0);
-                    doc.setFont("helvetica", "bold");
-                    doc.text("Context & Definitions:", 14, currentY);
-                    currentY += 6;
-
-                    doc.setFontSize(9);
-                    doc.setFont("helvetica", "normal");
-                    doc.setTextColor(60);
-                    const definitions = [
-                        "• This document contains user task data for analysis. Use it to understand productivity trends and project status.",
-                        "• Active: Tasks currently in progress and visible in the main view.",
-                        "• Frozen (Paused): Tasks temporarily 'hibernated' to stop the age counter. They are on hold, not abandoned.",
-                        "• Completed: Tasks that have been finished. The completion date is noted.",
-                        "• Archived: Tasks removed from the main view but preserved for history.",
-                        "• Frozen Duration: The total number of days a task has spent in the 'Frozen' state.",
-                        "• Tags: '@' denotes People/Collaborators. '#' denotes Modules/Components."
-                    ];
-
-                    definitions.forEach(def => {
-                        doc.text(def, 14, currentY);
-                        currentY += 5;
-                    });
-
-                    currentY += 4; // Spacing before summary
-
-                    // --- Summary Props ---
-                    const activeTasks = tasks.filter(t => !t.completedAt && !t.archived && !isTaskFrozen(t)).length;
-                    const frozenTasks = tasks.filter(t => !t.completedAt && !t.archived && isTaskFrozen(t)).length; // Currently frozen
-                    const completedTasks = tasks.filter(t => t.completedAt).length;
-
-                    // Draw Summary Box
-                    doc.setDrawColor(200);
-                    doc.setFillColor(245, 247, 250);
-                    doc.roundedRect(14, currentY, 180, 24, 3, 3, 'FD');
-
-                    doc.setFontSize(12);
-                    doc.setTextColor(50);
-                    doc.text("Snapshot Summary:", 20, currentY + 7);
-                    doc.setFontSize(10);
-                    doc.text(`Total Tasks: ${tasks.length}`, 20, currentY + 15);
-                    doc.text(`Active: ${activeTasks}`, 60, currentY + 15);
-                    doc.text(`Frozen (Paused): ${frozenTasks}`, 100, currentY + 15);
-                    doc.text(`Completed: ${completedTasks}`, 150, currentY + 15);
-
-                    currentY += 32; // Skip past the summary box for the next section
-
-                    // --- Global Tags Section ---
-                    doc.setFontSize(12);
-                    doc.setFont("helvetica", "bold");
-                    doc.setTextColor(0, 122, 255);
-                    doc.text('Global Tags', 14, currentY);
-                    currentY += 6;
-
-                    doc.setFontSize(9);
-                    doc.setFont("helvetica", "normal");
-                    doc.setTextColor(80);
-
-                    const peopleText = doc.splitTextToSize(`People: ${allTags.people.join(', ') || 'None'}`, 180);
-                    doc.text(peopleText, 14, currentY);
-
-                    // Adjust Y for next line based on text wrap
-                    currentY += (peopleText.length * 5);
-                    const modulesText = doc.splitTextToSize(`Modules: ${allTags.modules.join(', ') || 'None'}`, 180);
-                    doc.text(modulesText, 14, currentY);
-
-                    currentY += (modulesText.length * 5) + 8;
-
-                    // --- Table Data Preparation ---
-                    const tableData = tasks.map(t => {
-                        const frozenDays = calculateFrozenDays(t);
-                        const isFrozen = isTaskFrozen(t);
-
-                        let status = 'Active';
-                        if (t.archived) status = 'Archived';
-                        else if (t.completedAt) status = `Completed\n${t.completedAt.split('T')[0]}`;
-                        else if (isFrozen) status = 'Frozen (Paused)';
-
-                        const frozenDurationStr = frozenDays > 0 ? `${frozenDays} days` : '-';
-
-                        const tagsStr = [
-                            ...(t.tags.people || []).map(p => `@${p}`),
-                            ...(t.tags.modules || []).map(m => `#${m}`)
-                        ].join(' ');
-
-                        // Content logic: show ALL entries (sorted by date desc)
-                        let notes = '';
-                        if (t.content) {
-                            const dates = Object.keys(t.content).sort().reverse();
-                            notes = dates.map(date => `[${date}]\n${t.content[date]}`).join('\n\n');
-                        }
-
-                        return [t.id, t.title, status, frozenDurationStr, tagsStr, notes];
-                    });
-
-                    doc.autoTable({
-                        startY: currentY,
-                        head: [['ID', 'Title', 'Status', 'Paused Duration', 'Tags', 'Notes History']],
-                        body: tableData,
-                        theme: 'striped',
-                        headStyles: { fillColor: [0, 122, 255] },
-                        styles: { fontSize: 8, cellPadding: 3, valign: 'middle' },
-                        columnStyles: {
-                            0: { cellWidth: 12 },
-                            1: { cellWidth: 40, fontStyle: 'bold' },
-                            2: { cellWidth: 25 },
-                            3: { cellWidth: 22, halign: 'center' },
-                            4: { cellWidth: 30 },
-                            5: { cellWidth: 'auto' }
-                        }
-                    });
-
-                    doc.save('daily-dive-export.pdf');
-                });
+                // PDF Generation Logic
+                document.getElementById('export-pdf-btn').addEventListener('click', exportToPDF);
             };
 
             document.addEventListener('DOMContentLoaded', initializeApp);

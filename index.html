@@ -2263,10 +2263,15 @@ const gapiClientCallback = (resp) => {
                 }
             }
 
-        const tryAppInitialization = () => {
+     const tryAppInitialization = () => {
+                // Ensure libraries are fully loaded before proceeding
                 if (useGoogleSheets && gapiInited && gisInited) {
-                    // EXIT if session maintenance is disabled
+                    
+                    // FIX: If maintenance is OFF, we must manually trigger the "Logged Out" state
+                    // so the splash screen disappears and the button shows up.
                     if (!MAINTAIN_SESSION) {
+                        console.log('Session maintenance disabled. Showing manual login.');
+                        updateSigninStatus(false); 
                         return;
                     }
 
@@ -2278,12 +2283,27 @@ const gapiClientCallback = (resp) => {
                         scheduleTokenRefresh(expiresInSeconds);
                         updateSigninStatus(true);
                     } else {
-                        // Fallback: Attempt silent sign-in if no valid token in storage
+                        // Attempt silent sign-in
                         console.log('Attempting silent sign-in...');
+                        
+                        // FAILSAFE: If silent sign-in hangs, force show the button after 5s
+                        const silentAuthTimeout = setTimeout(() => {
+                             console.warn('Silent auth timed out. Showing manual login.');
+                             updateSigninStatus(false); 
+                        }, 5000);
+
+                        // Wrap callback to clear timeout
+                        const originalCallback = tokenClient.callback;
+                        tokenClient.callback = (resp) => {
+                            clearTimeout(silentAuthTimeout);
+                            if (originalCallback) tokenClient.callback = originalCallback;
+                            gapiClientCallback(resp);
+                        };
+
                         tokenClient.requestAccessToken({ prompt: 'none' });
                     }
                 }
-            }
+            };
 
             const isHoliday = (date) => {
                 const d = new Date(date);
@@ -2423,8 +2443,7 @@ const gapiClientCallback = (resp) => {
                 delete taskCopy.hibernationPeriods;
                 return taskCopy;
             };
-
-       const readFromSheet = async () => {
+const readFromSheet = async () => {
                 setStatus('Reading data...');
                 try {
                     const response = await gapi.client.sheets.spreadsheets.values.batchGet({
@@ -2432,10 +2451,10 @@ const gapiClientCallback = (resp) => {
                         ranges: ['tasks!A:H', 'tags!A:B', 'holidays!A:B'],
                     });
 
-                    // --- Processing Logic (Collapsed for brevity - stays the same) ---
                     const taskValueRange = response.result.valueRanges?.[0];
                     const tagValueRange = response.result.valueRanges?.[1];
                     const holidayValueRange = response.result.valueRanges?.[2];
+
                     const taskRows = taskValueRange?.values || [];
                     const tagRows = tagValueRange?.values || [];
                     const holidayRows = holidayValueRange?.values || [];
@@ -2488,7 +2507,6 @@ const gapiClientCallback = (resp) => {
                         });
                     }
                     holidays = parsedHolidays;
-                    // --- End Processing Logic ---
 
                     dataLoaded = true;
                     setStatus('Data loaded');
@@ -2502,19 +2520,19 @@ const gapiClientCallback = (resp) => {
                             localStorage.removeItem('google_access_token');
                             tokenClient.requestAccessToken({ prompt: 'none' });
                         } else {
-                            // If maintenance is disabled, a 401 means we must log out
                             updateSigninStatus(false);
                         }
                     } else {
                         setStatus('Read Error', true);
                     }
+                } finally {
+                    // GUARANTEE: Always hide the splash screen, even on error
+                    await syncFromPublicSheets();
+                    renderCurrentView(true, null, null);
+                    hideSplashScreen();
                 }
-
-                await syncFromPublicSheets();
-                renderCurrentView(true, null, null);
-                hideSplashScreen();
             };
-
+            
             const writeToSheet = async () => {
                 if (!isAuthorized) return;
 
@@ -5014,6 +5032,17 @@ const gapiClientCallback = (resp) => {
 
             document.addEventListener('DOMContentLoaded', initializeApp);
         })();
+
+        setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                if (splash && !splash.classList.contains('hidden')) {
+                    console.warn('Splash screen stuck (Failsafe triggered). Forcing removal.');
+                    hideSplashScreen();
+                    if (tasks.length === 0) {
+                        updateSigninStatus(false);
+                    }
+                }
+            }, 8000);
     </script>
 </body>
 

@@ -2191,25 +2191,20 @@ const loadStoredToken = () => {
 
 const gapiClientCallback = (resp) => {
                 if (resp.error) {
-                    console.log('Auth Error:', resp.error);
-                    if (resp.error !== 'popup_closed_by_user') {
-                        updateSigninStatus(false);
-                    }
+                    console.log('Silent auth failed or user is signed out:', resp.error);
+                    updateSigninStatus(false);
                     return;
                 }
 
-                // 1. Manually set the token for the active session (REQUIRED for immediate use)
+                saveToken(resp);
+                
+                // CRITICAL FIX: Manually set the token for the active API client
+                // This was missing, causing the app to think you weren't logged in!
                 if (gapi.client) {
                     gapi.client.setToken(resp);
                 }
 
-                // 2. If Session Maintenance is ENABLED, save and schedule refresh
-                if (MAINTAIN_SESSION) {
-                    saveToken(resp);
-                    const expiresIn = parseInt(resp.expires_in, 10);
-                    scheduleTokenRefresh(expiresIn);
-                }
-
+                scheduleTokenRefresh(parseInt(resp.expires_in, 10));
                 updateSigninStatus(true);
             };
 
@@ -2263,48 +2258,24 @@ const gapiClientCallback = (resp) => {
                 }
             }
 
-     const tryAppInitialization = () => {
-                // Ensure libraries are fully loaded before proceeding
+    const tryAppInitialization = () => {
                 if (useGoogleSheets && gapiInited && gisInited) {
-                    
-                    // FIX: If maintenance is OFF, we must manually trigger the "Logged Out" state
-                    // so the splash screen disappears and the button shows up.
-                    if (!MAINTAIN_SESSION) {
-                        console.log('Session maintenance disabled. Showing manual login.');
-                        updateSigninStatus(false); 
-                        return;
-                    }
-
                     const storedToken = loadStoredToken();
                     if (storedToken) {
-                        console.log('Restoring session...');
+                        console.log('Restoring session from local storage...');
+                        // Restore token to GAPI client
                         gapi.client.setToken({ access_token: storedToken.access_token });
+                        
                         const expiresInSeconds = (storedToken.expiry_time - Date.now()) / 1000;
                         scheduleTokenRefresh(expiresInSeconds);
                         updateSigninStatus(true);
                     } else {
-                        // Attempt silent sign-in
-                        console.log('Attempting silent sign-in...');
-                        
-                        // FAILSAFE: If silent sign-in hangs, force show the button after 5s
-                        const silentAuthTimeout = setTimeout(() => {
-                             console.warn('Silent auth timed out. Showing manual login.');
-                             updateSigninStatus(false); 
-                        }, 5000);
-
-                        // Wrap callback to clear timeout
-                        const originalCallback = tokenClient.callback;
-                        tokenClient.callback = (resp) => {
-                            clearTimeout(silentAuthTimeout);
-                            if (originalCallback) tokenClient.callback = originalCallback;
-                            gapiClientCallback(resp);
-                        };
-
+                        // Fallback to silent auth if no stored token
+                        console.log('No stored token. Attempting silent auth...');
                         tokenClient.requestAccessToken({ prompt: 'none' });
                     }
                 }
-            };
-
+            }
             const isHoliday = (date) => {
                 const d = new Date(date);
                 d.setHours(12, 0, 0, 0); // Avoid timezone issues by normalizing to noon
@@ -2451,6 +2422,7 @@ const readFromSheet = async () => {
                         ranges: ['tasks!A:H', 'tags!A:B', 'holidays!A:B'],
                     });
 
+                    // --- Processing Logic ---
                     const taskValueRange = response.result.valueRanges?.[0];
                     const tagValueRange = response.result.valueRanges?.[1];
                     const holidayValueRange = response.result.valueRanges?.[2];
@@ -2461,7 +2433,7 @@ const readFromSheet = async () => {
 
                     const parsedTasks = [];
                     if (taskRows.length > 1) {
-                        taskRows.slice(1).forEach((row) => {
+                        taskRows.slice(1).forEach((row, index) => {
                             try {
                                 if (!Array.isArray(row)) return;
                                 const task = {
@@ -2484,7 +2456,7 @@ const readFromSheet = async () => {
 
                     const parsedTags = { people: [], modules: [] };
                     if (tagRows.length > 1) {
-                        tagRows.slice(1).forEach((row) => {
+                        tagRows.slice(1).forEach((row, index) => {
                             try {
                                 if (!Array.isArray(row) || row.length < 2) return;
                                 const [category, tag] = row;
@@ -2498,7 +2470,7 @@ const readFromSheet = async () => {
 
                     const parsedHolidays = {};
                     if (holidayRows.length > 1) {
-                        holidayRows.slice(1).forEach((row) => {
+                        holidayRows.slice(1).forEach((row, index) => {
                             try {
                                 if (!Array.isArray(row) || row.length < 2) return;
                                 const [dateStr, isHolidayStr] = row;
@@ -2507,30 +2479,28 @@ const readFromSheet = async () => {
                         });
                     }
                     holidays = parsedHolidays;
+                    // --- End Processing Logic ---
 
                     dataLoaded = true;
                     setStatus('Data loaded');
                 } catch (err) {
                     console.error('Error reading from sheet:', err);
 
-                    // HANDLE AUTH ERRORS
+                    // NEW: Handle expired tokens automatically
                     if (err.status === 401 || (err.result && err.result.error && err.result.error.code === 401)) {
-                        if (MAINTAIN_SESSION) {
-                            console.log('Token expired. Refreshing session...');
-                            localStorage.removeItem('google_access_token');
-                            tokenClient.requestAccessToken({ prompt: 'none' });
-                        } else {
-                            updateSigninStatus(false);
-                        }
+                        console.log('Token expired. Attempting silent refresh...');
+                        // Clear the bad token
+                        localStorage.removeItem('google_access_token');
+                        // Try to get a new one silently
+                        tokenClient.requestAccessToken({ prompt: 'none' });
                     } else {
                         setStatus('Read Error', true);
                     }
-                } finally {
-                    // GUARANTEE: Always hide the splash screen, even on error
-                    await syncFromPublicSheets();
-                    renderCurrentView(true, null, null);
-                    hideSplashScreen();
                 }
+
+                await syncFromPublicSheets();
+                renderCurrentView(true, null, null);
+                hideSplashScreen();
             };
             
             const writeToSheet = async () => {

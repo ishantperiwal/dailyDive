@@ -2099,6 +2099,10 @@
             const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
             const isMobileDevice = /Mobi/i.test(navigator.userAgent);
 
+            if (window.location.protocol === 'file:') {
+                alert("Only 'Play' Button will work. Google Sign-In requires this app to be run on a local server (http://localhost) to work correctly.\n\It will not work directly from a file path.");
+            }
+
             // --- GLOBAL APP STATE & VARIABLES ---
             let gapiInited = false;
             let gisInited = false;
@@ -2143,6 +2147,11 @@
                     client_id: CLIENT_ID,
                     scope: 'https://www.googleapis.com/auth/spreadsheets',
                     callback: gapiClientCallback,
+                    error_callback: (error) => {
+                        console.error('GIS Error:', error);
+                        setStatus('Sign-in error: ' + (error.message || error.type), true);
+                        updateSigninStatus(false);
+                    }
                 });
                 gisInited = true;
                 tryAppInitialization();

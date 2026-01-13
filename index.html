@@ -2099,9 +2099,6 @@
             const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
             const isMobileDevice = /Mobi/i.test(navigator.userAgent);
 
-            if (window.location.protocol === 'file:') {
-                alert("Only 'Play' Button will work. Google Sign-In requires this app to be run on a local server (http://localhost) to work correctly.\n\It will not work directly from a file path.");
-            }
 
             // --- GLOBAL APP STATE & VARIABLES ---
             let gapiInited = false;
@@ -2214,7 +2211,7 @@
                 updateSigninStatus(true);
             };
 
-            const handleAuthClick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
+            const handleAuthClick = () => tokenClient.requestAccessToken({});
 
             const updateSigninStatus = (isSignedIn) => {
                 isAuthorized = isSignedIn;

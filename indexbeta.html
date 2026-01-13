@@ -2063,17 +2063,21 @@
         (function () {
             // --- GOOGLE SHEETS API CONFIG ---
             // !!! IMPORTANT SECURITY WARNING !!!
-            
-                    
-                                   const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
-                                   const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
-                                   const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-               
-/*
-            const API_KEY = ''; // Your Google API Key
-            const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
-            const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-*/
+
+
+            const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
+            const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
+            const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
+
+            const saveSession = true; // Set to true to persist the session in localStorage
+            const USER_EMAIL = 'ishant.ip@gmail.com'; // Optional: Enter your email to skip the account selection screen
+            /*
+                        const API_KEY = ''; // Your Google API Key
+                        const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
+                        const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
+
+           
+            */
             // NEW: Configuration for public sheets to import tasks from
             const PUBLIC_SHEETS_CONFIG = [
                 {
@@ -2096,6 +2100,7 @@
 
             const useGoogleSheets = API_KEY && CLIENT_ID && SPREADSHEET_ID;
             const isMobileDevice = /Mobi/i.test(navigator.userAgent);
+
 
             // --- GLOBAL APP STATE & VARIABLES ---
             let gapiInited = false;
@@ -2141,6 +2146,11 @@
                     client_id: CLIENT_ID,
                     scope: 'https://www.googleapis.com/auth/spreadsheets',
                     callback: gapiClientCallback,
+                    error_callback: (error) => {
+                        console.error('GIS Error:', error);
+                        setStatus('Sign-in error: ' + (error.message || error.type), true);
+                        updateSigninStatus(false);
+                    }
                 });
                 gisInited = true;
                 tryAppInitialization();
@@ -2153,6 +2163,7 @@
             };
 
             const saveToken = (tokenResponse) => {
+                if (!saveSession) return;
                 const expiresIn = parseInt(tokenResponse.expires_in, 10);
                 const expiryTime = Date.now() + (expiresIn * 1000);
                 const tokenData = {
@@ -2163,6 +2174,7 @@
             };
 
             const loadStoredToken = () => {
+                if (!saveSession) return null;
                 const storedToken = localStorage.getItem('google_access_token');
                 if (storedToken) {
                     try {
@@ -2201,7 +2213,11 @@
                 updateSigninStatus(true);
             };
 
-            const handleAuthClick = () => tokenClient.requestAccessToken({ prompt: 'consent' });
+            const handleAuthClick = () => {
+                const config = {};
+                if (USER_EMAIL) config.login_hint = USER_EMAIL;
+                tokenClient.requestAccessToken(config);
+            };
 
             const updateSigninStatus = (isSignedIn) => {
                 isAuthorized = isSignedIn;
@@ -2262,7 +2278,9 @@
                         updateSigninStatus(true);
                     } else {
                         // Fallback to silent auth if no stored token
-                        tokenClient.requestAccessToken({ prompt: 'none' });
+                        const config = { prompt: 'none' };
+                        if (USER_EMAIL) config.login_hint = USER_EMAIL;
+                        tokenClient.requestAccessToken(config);
                     }
                 }
             }

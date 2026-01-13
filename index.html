@@ -2063,17 +2063,19 @@
         (function () {
             // --- GOOGLE SHEETS API CONFIG ---
             // !!! IMPORTANT SECURITY WARNING !!!
-            
-                    
-                                   const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
-                                   const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
-                                   const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-                                   const MAINTAIN_SESSION = false;
-/*
-            const API_KEY = ''; // Your Google API Key
-            const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
-            const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
-*/
+
+
+            const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
+            const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
+            const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
+            const saveSession = false; // Set to true to persist the session in localStorage
+            /*
+                        const API_KEY = ''; // Your Google API Key
+                        const CLIENT_ID = ''; // Your Google OAuth 2.0 Client ID
+                        const SPREADSHEET_ID = ''; // The ID of your Google Spreadsheet
+
+           
+            */
             // NEW: Configuration for public sheets to import tasks from
             const PUBLIC_SHEETS_CONFIG = [
                 {
@@ -2153,6 +2155,7 @@
             };
 
             const saveToken = (tokenResponse) => {
+                if (!saveSession) return;
                 const expiresIn = parseInt(tokenResponse.expires_in, 10);
                 const expiryTime = Date.now() + (expiresIn * 1000);
                 const tokenData = {
@@ -2161,13 +2164,14 @@
                 };
                 localStorage.setItem('google_access_token', JSON.stringify(tokenData));
             };
-const loadStoredToken = () => {
+
+            const loadStoredToken = () => {
+                if (!saveSession) return null;
                 const storedToken = localStorage.getItem('google_access_token');
                 if (storedToken) {
                     try {
                         const tokenData = JSON.parse(storedToken);
-                        // Buffer: don't return token if it expires in less than 60 seconds
-                        if (Date.now() < tokenData.expiry_time - 60000) {
+                        if (Date.now() < tokenData.expiry_time - 60000) { // 1 minute buffer
                             return tokenData;
                         }
                     } catch (e) {
@@ -2189,7 +2193,7 @@ const loadStoredToken = () => {
                 }
             };
 
-const gapiClientCallback = (resp) => {
+            const gapiClientCallback = (resp) => {
                 if (resp.error) {
                     console.log('Silent auth failed or user is signed out:', resp.error);
                     updateSigninStatus(false);
@@ -2197,13 +2201,6 @@ const gapiClientCallback = (resp) => {
                 }
 
                 saveToken(resp);
-                
-                // CRITICAL FIX: Manually set the token for the active API client
-                // This was missing, causing the app to think you weren't logged in!
-                if (gapi.client) {
-                    gapi.client.setToken(resp);
-                }
-
                 scheduleTokenRefresh(parseInt(resp.expires_in, 10));
                 updateSigninStatus(true);
             };
@@ -2258,24 +2255,22 @@ const gapiClientCallback = (resp) => {
                 }
             }
 
-    const tryAppInitialization = () => {
+            const tryAppInitialization = () => {
                 if (useGoogleSheets && gapiInited && gisInited) {
                     const storedToken = loadStoredToken();
                     if (storedToken) {
                         console.log('Restoring session from local storage...');
-                        // Restore token to GAPI client
                         gapi.client.setToken({ access_token: storedToken.access_token });
-                        
                         const expiresInSeconds = (storedToken.expiry_time - Date.now()) / 1000;
                         scheduleTokenRefresh(expiresInSeconds);
                         updateSigninStatus(true);
                     } else {
                         // Fallback to silent auth if no stored token
-                        console.log('No stored token. Attempting silent auth...');
                         tokenClient.requestAccessToken({ prompt: 'none' });
                     }
                 }
             }
+
             const isHoliday = (date) => {
                 const d = new Date(date);
                 d.setHours(12, 0, 0, 0); // Avoid timezone issues by normalizing to noon
@@ -2414,7 +2409,8 @@ const gapiClientCallback = (resp) => {
                 delete taskCopy.hibernationPeriods;
                 return taskCopy;
             };
-const readFromSheet = async () => {
+
+            const readFromSheet = async () => {
                 setStatus('Reading data...');
                 try {
                     const response = await gapi.client.sheets.spreadsheets.values.batchGet({
@@ -2422,7 +2418,6 @@ const readFromSheet = async () => {
                         ranges: ['tasks!A:H', 'tags!A:B', 'holidays!A:B'],
                     });
 
-                    // --- Processing Logic ---
                     const taskValueRange = response.result.valueRanges?.[0];
                     const tagValueRange = response.result.valueRanges?.[1];
                     const holidayValueRange = response.result.valueRanges?.[2];
@@ -2449,7 +2444,9 @@ const readFromSheet = async () => {
                                 if (isNaN(task.id) || !task.createdAt) return;
                                 parseTaskHibernation(task);
                                 parsedTasks.push(task);
-                            } catch (e) { console.error(e); }
+                            } catch (e) {
+                                console.error(`Error parsing row ${index + 2} from 'tasks' sheet:`, e);
+                            }
                         });
                     }
                     tasks = parsedTasks;
@@ -2463,7 +2460,9 @@ const readFromSheet = async () => {
                                 if (category && tag && parsedTags.hasOwnProperty(category)) {
                                     parsedTags[category].push(tag);
                                 }
-                            } catch (e) { console.error(e); }
+                            } catch (e) {
+                                console.error(`Error parsing row ${index + 2} from 'tags' sheet:`, e);
+                            }
                         });
                     }
                     allTags = parsedTags;
@@ -2474,35 +2473,30 @@ const readFromSheet = async () => {
                             try {
                                 if (!Array.isArray(row) || row.length < 2) return;
                                 const [dateStr, isHolidayStr] = row;
-                                if (dateStr) parsedHolidays[dateStr] = (isHolidayStr === 'TRUE');
-                            } catch (e) { console.error(e); }
+                                if (dateStr) {
+                                    parsedHolidays[dateStr] = (isHolidayStr === 'TRUE');
+                                }
+                            } catch (e) {
+                                console.error(`Error parsing row ${index + 2} from 'holidays' sheet:`, e);
+                            }
                         });
                     }
                     holidays = parsedHolidays;
-                    // --- End Processing Logic ---
 
-                    dataLoaded = true;
+                    dataLoaded = true; // Mark data as successfully loaded
                     setStatus('Data loaded');
                 } catch (err) {
                     console.error('Error reading from sheet:', err);
-
-                    // NEW: Handle expired tokens automatically
-                    if (err.status === 401 || (err.result && err.result.error && err.result.error.code === 401)) {
-                        console.log('Token expired. Attempting silent refresh...');
-                        // Clear the bad token
-                        localStorage.removeItem('google_access_token');
-                        // Try to get a new one silently
-                        tokenClient.requestAccessToken({ prompt: 'none' });
-                    } else {
-                        setStatus('Read Error', true);
-                    }
+                    setStatus('Read Error', true);
                 }
 
                 await syncFromPublicSheets();
                 renderCurrentView(true, null, null);
+                // After loading our main data, try to sync from public sheets.
+
                 hideSplashScreen();
             };
-            
+
             const writeToSheet = async () => {
                 if (!isAuthorized) return;
 
@@ -5002,17 +4996,6 @@ const readFromSheet = async () => {
 
             document.addEventListener('DOMContentLoaded', initializeApp);
         })();
-
-        setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                if (splash && !splash.classList.contains('hidden')) {
-                    console.warn('Splash screen stuck (Failsafe triggered). Forcing removal.');
-                    hideSplashScreen();
-                    if (tasks.length === 0) {
-                        updateSigninStatus(false);
-                    }
-                }
-            }, 8000);
     </script>
 </body>
 

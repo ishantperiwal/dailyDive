@@ -2055,9 +2055,7 @@
         <button id="toast-authorize-btn" style="display: none;">Sign In</button>
     </div>
 
-    <!-- GOOGLE API SCRIPTS -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
 
     <script>
         (function () {
@@ -2136,6 +2134,12 @@
             let appHasLoaded = false;
             let dataLoaded = false; // New flag to track successful data load
             let lastScrollY = window.scrollY;
+
+            // Load cache immediately on startup
+            setTimeout(() => {
+                if (typeof loadFromCache === 'function') loadFromCache();
+                setStatus('Connecting...');
+            }, 0);
 
             window.gapiLoaded = () => {
                 gapi.load('client', initializeGapiClient);
@@ -2232,10 +2236,6 @@
                     toastAuthorizeBtn.style.display = 'block';
                     toastContainerEl.classList.add('show');
                     clearTimeout(toastTimeout);
-
-                    tasks = [];
-                    holidays = {};
-                    allTags = { people: [], modules: [] };
                     renderCurrentView();
                 }
             };
@@ -2355,10 +2355,9 @@
                         await readFromSheet();
                     }
                 } else {
-                    const storedTasks = localStorage.getItem('tasks');
-                    if (storedTasks) {
-                        tasks = JSON.parse(storedTasks);
-                    } else {
+                    loadFromCache();
+                    if (!tasks || tasks.length === 0) {
+                        // Default data if completely empty and offline
                         const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                         const tenDaysAgo = new Date(); tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
                         const fiveDaysAgo = new Date(); fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
@@ -2376,19 +2375,21 @@
                             tags: { people: ['Alice'], modules: ['API'] },
                             attachments: []
                         }];
+                        tasks.forEach(parseTaskHibernation);
+                        allTags = { people: ['Alice', 'Bob'], modules: ['Frontend', 'API', 'Database'] };
+                        renderCurrentView(true, null, null);
+                        hideSplashScreen();
                     }
-                    tasks.forEach(parseTaskHibernation);
-                    const storedHolidays = localStorage.getItem('holidays');
-                    if (storedHolidays) {
-                        holidays = JSON.parse(storedHolidays);
-                    }
-                    allTags = JSON.parse(localStorage.getItem('allTags')) || { people: ['Alice', 'Bob'], modules: ['Frontend', 'API', 'Database'] };
-                    renderCurrentView(true, null, null);
-                    setTimeout(hideSplashScreen, 500);
                 }
             };
 
             const saveData = () => {
+                // ALWAYS save to local cache for offline-first experience
+                const tasksToSave = tasks.map(prepareTaskForSaving);
+                localStorage.setItem('tasks', JSON.stringify(tasksToSave));
+                localStorage.setItem('holidays', JSON.stringify(holidays));
+                localStorage.setItem('allTags', JSON.stringify(allTags));
+
                 if (useGoogleSheets) {
                     if (isAuthorized) {
                         setStatus('Syncing...');
@@ -2397,11 +2398,6 @@
                             await writeToSheet();
                         }, 2000);
                     }
-                } else {
-                    const tasksToSave = tasks.map(prepareTaskForSaving);
-                    localStorage.setItem('tasks', JSON.stringify(tasksToSave));
-                    localStorage.setItem('holidays', JSON.stringify(holidays));
-                    localStorage.setItem('allTags', JSON.stringify(allTags));
                 }
             };
 
@@ -5011,6 +5007,9 @@
             document.addEventListener('DOMContentLoaded', initializeApp);
         })();
     </script>
+    <!-- GOOGLE API SCRIPTS (Moved to bottom) -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 
 </html>

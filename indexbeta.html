@@ -2055,9 +2055,7 @@
         <button id="toast-authorize-btn" style="display: none;">Sign In</button>
     </div>
 
-    <!-- GOOGLE API SCRIPTS -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
 
     <script>
         (function () {
@@ -5013,6 +5011,9 @@
             document.addEventListener('DOMContentLoaded', initializeApp);
         })();
     </script>
+    <!-- GOOGLE API SCRIPTS (Moved to bottom) -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 
 </html>

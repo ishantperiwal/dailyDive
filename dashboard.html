@@ -298,13 +298,6 @@
             gap: 8px;
         }
 
-        .task-card-meta .separator {
-            width: 3px;
-            height: 3px;
-            background-color: rgba(0, 0, 0, 0.25);
-            border-radius: 50%;
-        }
-
         .task-card.completed .task-card-title {
             text-decoration: line-through;
             color: rgba(0, 0, 0, 0.5);
@@ -522,9 +515,14 @@
 
     <script>
         (function () {
-            const SPREADSHEET_ID = '1NNytupRTXTjIVZ4TnYkGSwb4RvlLxvqQzBjb-BfTGiU';
-            const SHEET_NAME = 'Sheet1';
+            // --- CONFIG ---
+            // This reads directly from the MAIN spreadsheet (must be set to "Anyone with the link → Viewer")
+            const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128';
+            const SHEET_NAME = 'tasks';
             const CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+
+            // Card colors matching the main app
+            const noteColors = ['#fffc79', '#a0e7e5', '#f0a8a8', '#b4f8c8', '#fdc7b5'];
 
             let allTasks = [];
             let activeFilter = null;
@@ -576,6 +574,54 @@
                 return rows;
             };
 
+            // --- PARSE TASK FROM MAIN SPREADSHEET FORMAT ---
+            // Main spreadsheet columns: id, title, content, createdAt, completedAt, archived, tags, attachments
+            const parseTask = (row, index) => {
+                try {
+                    const id = row[0] || '';
+                    const title = row[1] || 'Untitled Task';
+                    const contentJson = row[2] || '{}';
+                    const createdAt = row[3] || '';
+                    const completedAt = row[4] || '';
+                    const archived = row[5] === 'TRUE';
+                    const tagsJson = row[6] || '{}';
+
+                    // Parse tags JSON
+                    let tags = { people: [], modules: [] };
+                    try { tags = JSON.parse(tagsJson); } catch (e) { }
+
+                    // Parse content JSON to detect hibernation
+                    let isHibernated = false;
+                    try {
+                        const content = JSON.parse(contentJson);
+                        if (content._hibernation && content._hibernation.length > 0) {
+                            const lastPeriod = content._hibernation[content._hibernation.length - 1];
+                            if (!lastPeriod.end) isHibernated = true;
+                        }
+                    } catch (e) { }
+
+                    // Derive status
+                    let status = 'Active';
+                    if (completedAt) status = 'Completed';
+                    else if (isHibernated) status = 'Hibernated';
+
+                    return {
+                        id,
+                        title,
+                        status,
+                        createdAt,
+                        completedAt,
+                        archived,
+                        peopleTags: tags.people || [],
+                        moduleTags: tags.modules || [],
+                        color: noteColors[index % noteColors.length]
+                    };
+                } catch (e) {
+                    console.error('Error parsing task row:', e, row);
+                    return null;
+                }
+            };
+
             // --- DATA FETCHING ---
             const fetchData = async () => {
                 const loadingEl = document.getElementById('loading-state');
@@ -609,16 +655,11 @@
                         return;
                     }
 
-                    const headers = rows[0];
+                    // Skip header row (row 0), parse each data row
                     const dataRows = rows.slice(1);
-
-                    allTasks = dataRows.map(row => {
-                        const task = {};
-                        headers.forEach((header, i) => {
-                            task[header] = row[i] || '';
-                        });
-                        return task;
-                    }).filter(task => task.id && task.title);
+                    allTasks = dataRows
+                        .map((row, index) => parseTask(row, index))
+                        .filter(task => task && task.id && task.title);
 
                     loadingEl.style.display = 'none';
                     document.getElementById('last-synced').textContent = `Updated ${new Date().toLocaleTimeString()}`;
@@ -629,7 +670,6 @@
                     loadingEl.style.display = 'none';
 
                     if (allTasks.length > 0) {
-                        // We have cached data, just show a warning
                         render();
                     } else {
                         errorEl.style.display = 'block';
@@ -637,7 +677,7 @@
                             <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
                             <div>Could not load dashboard data.</div>
                             <div style="font-size: 12px; margin-top: 8px; color: #999;">
-                                Make sure the spreadsheet is shared as "Anyone with the link → Viewer"
+                                Make sure the main spreadsheet is shared as "Anyone with the link → Viewer"
                             </div>
                         `;
                     }
@@ -660,44 +700,44 @@
                 return `${Math.floor(diffMonths / 12)}y ago`;
             };
 
+            const escapeHtml = (text) => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+
             const createTaskCard = (task, index) => {
                 const card = document.createElement('div');
                 const isCompleted = task.status === 'Completed';
                 const isHibernated = task.status === 'Hibernated';
-                const cardColor = task.color || '#fffc79';
 
                 card.className = `task-card animate-in ${isCompleted ? 'completed' : ''} ${isHibernated ? 'hibernated' : ''}`;
                 card.style.animationDelay = `${index * 0.04}s`;
-                card.style.backgroundColor = cardColor;
+                card.style.backgroundColor = task.color;
 
                 let badgeHtml = '';
                 if (isHibernated) {
                     badgeHtml = '<div class="hibernated-badge">💤</div>';
-                } else if (isCompleted && task.activeDays) {
-                    badgeHtml = `<div class="active-days-badge">${task.activeDays}d</div>`;
                 }
 
                 let metaHtml = '';
                 if (isCompleted && task.completedAt) {
-                    metaHtml = `
-                        <span>Completed ${getRelativeTime(task.completedAt)}</span>
-                    `;
+                    metaHtml = `<span>Completed ${getRelativeTime(task.completedAt)}</span>`;
                 } else {
-                    metaHtml = `
-                        <span>Started ${getRelativeTime(task.createdAt)}</span>
-                    `;
+                    metaHtml = `<span>Started ${getRelativeTime(task.createdAt)}</span>`;
                 }
 
                 // Tags
-                const peopleTags = task.peopleTags ? task.peopleTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-                const moduleTags = task.moduleTags ? task.moduleTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-                const allTags = [...peopleTags.map(t => `@${t}`), ...moduleTags.map(t => `#${t}`)];
+                const allTags = [
+                    ...task.peopleTags.map(t => `@${t}`),
+                    ...task.moduleTags.map(t => `#${t}`)
+                ];
 
                 let tagsHtml = '';
                 if (allTags.length > 0) {
                     tagsHtml = `
                         <div class="task-card-tags">
-                            ${allTags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}
+                            ${allTags.map(tag => `<span class="task-tag">${escapeHtml(tag)}</span>`).join('')}
                         </div>
                     `;
                 }
@@ -716,18 +756,10 @@
                 return card;
             };
 
-            const escapeHtml = (text) => {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            };
-
             const getFilteredTasks = () => {
                 if (!activeFilter) return allTasks;
                 return allTasks.filter(task => {
-                    const peopleTags = task.peopleTags ? task.peopleTags.split(',').map(t => t.trim()) : [];
-                    const moduleTags = task.moduleTags ? task.moduleTags.split(',').map(t => t.trim()) : [];
-                    return peopleTags.includes(activeFilter) || moduleTags.includes(activeFilter);
+                    return task.peopleTags.includes(activeFilter) || task.moduleTags.includes(activeFilter);
                 });
             };
 
@@ -735,7 +767,7 @@
                 const filteredTasks = getFilteredTasks();
 
                 // Only show non-archived tasks
-                const visibleTasks = filteredTasks.filter(t => t.archived !== 'TRUE');
+                const visibleTasks = filteredTasks.filter(t => !t.archived);
 
                 const activeTasks = visibleTasks.filter(t => t.status === 'Active' || t.status === 'Hibernated');
                 const completedTasks = visibleTasks.filter(t => t.status === 'Completed');
@@ -744,11 +776,12 @@
                 activeTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 completedTasks.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
 
-                // Stats
-                const totalNonArchived = allTasks.filter(t => t.archived !== 'TRUE').length;
-                const totalActive = allTasks.filter(t => t.archived !== 'TRUE' && (t.status === 'Active' || t.status === 'Hibernated')).length;
-                const totalCompleted = allTasks.filter(t => t.archived !== 'TRUE' && t.status === 'Completed').length;
-                const rate = totalNonArchived > 0 ? Math.round((totalCompleted / totalNonArchived) * 100) : 0;
+                // Stats (always from all tasks, not filtered)
+                const allVisible = allTasks.filter(t => !t.archived);
+                const totalActive = allVisible.filter(t => t.status === 'Active' || t.status === 'Hibernated').length;
+                const totalCompleted = allVisible.filter(t => t.status === 'Completed').length;
+                const total = allVisible.length;
+                const rate = total > 0 ? Math.round((totalCompleted / total) * 100) : 0;
 
                 document.getElementById('stat-active').textContent = totalActive;
                 document.getElementById('stat-completed').textContent = totalCompleted;
@@ -759,16 +792,14 @@
                 const activeGrid = document.getElementById('active-grid');
                 const activeSection = document.getElementById('active-section');
                 activeGrid.innerHTML = '';
+                activeSection.style.display = 'block';
+                document.getElementById('active-count').textContent = activeTasks.length;
 
                 if (activeTasks.length > 0) {
-                    activeSection.style.display = 'block';
-                    document.getElementById('active-count').textContent = activeTasks.length;
                     activeTasks.forEach((task, i) => {
                         activeGrid.appendChild(createTaskCard(task, i));
                     });
                 } else {
-                    activeSection.style.display = 'block';
-                    document.getElementById('active-count').textContent = '0';
                     activeGrid.innerHTML = `
                         <div class="empty-state" style="grid-column: 1 / -1;">
                             <div class="empty-emoji">🎉</div>
@@ -781,16 +812,14 @@
                 const completedGrid = document.getElementById('completed-grid');
                 const completedSection = document.getElementById('completed-section');
                 completedGrid.innerHTML = '';
+                completedSection.style.display = 'block';
+                document.getElementById('completed-count').textContent = completedTasks.length;
 
                 if (completedTasks.length > 0) {
-                    completedSection.style.display = 'block';
-                    document.getElementById('completed-count').textContent = completedTasks.length;
                     completedTasks.forEach((task, i) => {
                         completedGrid.appendChild(createTaskCard(task, i));
                     });
                 } else {
-                    completedSection.style.display = 'block';
-                    document.getElementById('completed-count').textContent = '0';
                     completedGrid.innerHTML = `
                         <div class="empty-state" style="grid-column: 1 / -1;">
                             <div class="empty-emoji">📝</div>
@@ -807,10 +836,8 @@
                 const filterBar = document.getElementById('filter-bar');
                 const tagCounts = {};
 
-                allTasks.filter(t => t.archived !== 'TRUE').forEach(task => {
-                    const peopleTags = task.peopleTags ? task.peopleTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-                    const moduleTags = task.moduleTags ? task.moduleTags.split(',').map(t => t.trim()).filter(Boolean) : [];
-                    [...peopleTags, ...moduleTags].forEach(tag => {
+                allTasks.filter(t => !t.archived).forEach(task => {
+                    [...task.peopleTags, ...task.moduleTags].forEach(tag => {
                         tagCounts[tag] = (tagCounts[tag] || 0) + 1;
                     });
                 });

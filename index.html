@@ -2066,7 +2066,6 @@
             const API_KEY = 'AIzaSyBCCJqOFUMrtVta4oBBvk_yqjW70HA3GrA'; // Your Google API Key
             const CLIENT_ID = '285573038857-t7fk5aakb0sm1gohisst234bsj1co2s1.apps.googleusercontent.com'; // Your Google OAuth 2.0 Client ID
             const SPREADSHEET_ID = '1J9xENB3Fz3laJlMsz5mdojXu0BbJ3oCNE5LxHRaI128'; // The ID of your Google Spreadsheet
-            const DASHBOARD_SPREADSHEET_ID = '1NNytupRTXTjIVZ4TnYkGSwb4RvlLxvqQzBjb-BfTGiU'; // Public spreadsheet for dashboard
 
             const saveSession = true; // Set to true to persist the session in localStorage
             const USER_EMAIL = 'ishant.ip@gmail.com'; // Optional: Enter your email to skip the account selection screen
@@ -2569,11 +2568,6 @@
                     });
 
                     setStatus('Saved');
-
-                    // Also sync to public dashboard spreadsheet
-                    writeToPublicSheet().catch(err => {
-                        console.error('Dashboard sync failed (non-blocking):', err);
-                    });
                 } catch (err) {
                     // Check if the error is due to an expired token (401 Unauthorized)
                     if (err.status === 401) {
@@ -2601,64 +2595,6 @@
                         console.error('Error writing to sheet:', err);
                         setStatus('Save Error', true);
                     }
-                }
-            };
-
-            const writeToPublicSheet = async () => {
-                if (!isAuthorized || !DASHBOARD_SPREADSHEET_ID) return;
-
-                try {
-                    const getStatus = (task) => {
-                        if (task.completedAt) return 'Completed';
-                        if (task.hibernationPeriods && task.hibernationPeriods.length > 0) {
-                            const lastPeriod = task.hibernationPeriods[task.hibernationPeriods.length - 1];
-                            if (!lastPeriod.end) return 'Hibernated';
-                        }
-                        return 'Active';
-                    };
-
-                    const tasksToSave = tasks.map(prepareTaskForSaving);
-                    const dashboardValues = [
-                        ['id', 'title', 'status', 'createdAt', 'completedAt', 'archived', 'peopleTags', 'moduleTags', 'activeDays', 'color'],
-                        ...tasksToSave.map((task, index) => {
-                            // Restore hibernation for status check
-                            const liveTask = tasks.find(t => t.id === task.id) || task;
-                            const status = getStatus(liveTask);
-                            const colorIndex = index % noteColors.length;
-                            const days = liveTask.completedAt ? calculateActiveDays(liveTask) : '';
-                            return [
-                                task.id,
-                                task.title,
-                                status,
-                                task.createdAt,
-                                task.completedAt || '',
-                                task.archived ? 'TRUE' : 'FALSE',
-                                (task.tags?.people || []).join(', '),
-                                (task.tags?.modules || []).join(', '),
-                                days,
-                                noteColors[colorIndex]
-                            ];
-                        })
-                    ];
-
-                    // Clear existing data
-                    await gapi.client.sheets.spreadsheets.values.clear({
-                        spreadsheetId: DASHBOARD_SPREADSHEET_ID,
-                        range: 'Sheet1!A:J',
-                    });
-
-                    // Write fresh data
-                    await gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: DASHBOARD_SPREADSHEET_ID,
-                        range: 'Sheet1!A1',
-                        valueInputOption: 'USER_ENTERED',
-                        resource: { values: dashboardValues }
-                    });
-
-                    console.log('Dashboard spreadsheet synced successfully.');
-                } catch (err) {
-                    console.error('Error writing to dashboard spreadsheet:', err);
-                    // Non-blocking: don't show error toast for dashboard sync failures
                 }
             };
 

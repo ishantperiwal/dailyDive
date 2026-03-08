@@ -870,6 +870,49 @@
             background-color: var(--checkmark-color);
         }
 
+        /* Attachment Pills in Modal */
+        #task-attachments-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 4px 15px 12px 0;
+            margin-top: 8px;
+            -ms-overflow-style: none;
+            /* Hide scrollbar for IE/Edge */
+            scrollbar-width: none;
+            /* Hide scrollbar for Firefox */
+        }
+
+        #task-attachments-scroll::-webkit-scrollbar {
+            display: none;
+            /* Hide scrollbar for Chrome/Safari */
+        }
+
+        .attachment-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #444;
+            white-space: nowrap;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .attachment-pill:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .attachment-pill img {
+            display: block;
+        }
+
+        /* ===== RESPONSIVE / MOBILE ===== */
         .daily-entry-textarea.is-editing {
             padding: 0;
         }
@@ -2072,6 +2115,7 @@
                     <div id="modal-note-content">
                         <textarea id="task-title-input" placeholder="Task Title..." rows="1"
                             enterkeyhint="done"></textarea>
+                        <div id="task-attachments-scroll"></div>
                         <div id="daily-entries-wrapper"></div>
                     </div>
                     <div id="modal-note-footer">
@@ -2353,25 +2397,42 @@
                 return div.innerHTML;
             };
 
+            const autoGrow = (element) => {
+                element.style.height = '1px';
+                element.style.height = (element.scrollHeight + 2) + 'px'; // +2 for buffer
+            };
+
             const isTaskHibernated = (task) => task.status === 'Hibernated';
 
             const showModal = (task) => {
+                const modalContainer = document.getElementById('modal-container');
+                const taskTitleInput = document.getElementById('task-title-input');
+                const taskAttachmentsScroll = document.getElementById('task-attachments-scroll');
+                const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
+                const peopleChipContainer = document.getElementById('people-chip-container');
+                const moduleChipContainer = document.getElementById('module-chip-container');
+                const hibernateBtn = document.getElementById('hibernate-btn');
+
+                taskAttachmentsScroll.innerHTML = ''; // Clear previous attachments
+                peopleChipContainer.innerHTML = ''; // Clear previous people tags
+                moduleChipContainer.innerHTML = ''; // Clear previous module tags
+                dailyEntriesWrapper.innerHTML = ''; // Clear previous daily entries
+
                 const modalParams = {
                     title: task.title || 'Untitled',
                     content: task.content || {},
-                    tags: task.tags || { people: task.peopleTags || [], modules: task.moduleTags || [] }
+                    tags: task.tags || { people: task.peopleTags || [], modules: task.moduleTags || [] },
+                    attachments: task.attachments || []
                 };
 
-                const titleInput = document.getElementById('task-title-input');
-                titleInput.value = modalParams.title;
-                titleInput.readOnly = true;
+                taskTitleInput.value = modalParams.title;
+                taskTitleInput.readOnly = true;
+                setTimeout(() => autoGrow(taskTitleInput), 0);
 
                 document.getElementById('confirm-add-btn').style.display = 'none';
                 document.getElementById('hibernate-btn').style.display = 'none';
 
-                const entriesWrapper = document.getElementById('daily-entries-wrapper');
-                entriesWrapper.innerHTML = '';
-                entriesWrapper.className = 'timeline-view';
+                dailyEntriesWrapper.className = 'timeline-view';
 
                 const sortedKeys = Object.keys(modalParams.content).filter(k => k !== '_hibernation').sort();
 
@@ -2381,7 +2442,7 @@
                     emptyState.style.textAlign = 'center';
                     emptyState.style.color = '#777';
                     emptyState.textContent = 'No journal entries yet.';
-                    entriesWrapper.appendChild(emptyState);
+                    dailyEntriesWrapper.appendChild(emptyState);
                 } else {
                     sortedKeys.forEach((key, idx) => {
                         const entryText = modalParams.content[key];
@@ -2406,13 +2467,11 @@
                                 <div class="daily-entry-textarea" style="opacity: 0.8;">${escapeHtml(entryText)}</div>
                             </div>
                         `;
-                        entriesWrapper.appendChild(entryDiv);
+                        dailyEntriesWrapper.appendChild(entryDiv);
                     });
                 }
 
-                const renderTags = (containerId, tagsArray) => {
-                    const container = document.getElementById(containerId);
-                    container.innerHTML = '';
+                const renderTags = (container, tagsArray) => {
                     if (!tagsArray || tagsArray.length === 0) {
                         container.innerHTML = '<span style="color: #999; font-size: 13px;">None</span>';
                         return;
@@ -2425,13 +2484,41 @@
                     });
                 };
 
-                renderTags('people-chip-container', modalParams.tags.people);
-                renderTags('module-chip-container', modalParams.tags.modules);
+                renderTags(peopleChipContainer, modalParams.tags.people);
+                renderTags(moduleChipContainer, modalParams.tags.modules);
 
-                const modal = document.getElementById('modal-container');
-                modal.style.display = 'flex';
-                void modal.offsetWidth;
-                modal.classList.add('show');
+                if (isTaskHibernated(task)) {
+                    hibernateBtn.title = 'Un-hibernate Task';
+                } else {
+                    hibernateBtn.title = 'Hibernate Task';
+                }
+
+                if (modalParams.attachments && modalParams.attachments.length > 0) {
+                    modalParams.attachments.forEach(attachment => {
+                        const pill = document.createElement('a');
+                        pill.className = 'attachment-pill';
+                        pill.href = attachment.url;
+                        pill.target = '_blank';
+                        pill.onclick = (e) => e.stopPropagation();
+
+                        let iconHTML = '📄';
+                        if (attachment.url && attachment.url.includes('figma.com')) {
+                            iconHTML = `<img src="figma.png" alt="Figma" width="16" height="16">`;
+                        } else if (attachment.url && attachment.url.includes('atlassian.net')) {
+                            iconHTML = `<img src="jira.png" alt="Jira" width="16" height="16">`;
+                        }
+
+                        pill.innerHTML = `${iconHTML}<span>${attachment.title || 'Untitled'}</span>`;
+                        taskAttachmentsScroll.appendChild(pill);
+                    });
+                    taskAttachmentsScroll.style.display = 'flex';
+                } else {
+                    taskAttachmentsScroll.style.display = 'none';
+                }
+
+                modalContainer.style.display = 'flex';
+                void modalContainer.offsetWidth;
+                modalContainer.classList.add('show');
             };
 
             const hideModal = () => {
@@ -2439,8 +2526,15 @@
                 modal.classList.remove('show');
                 setTimeout(() => {
                     modal.style.display = 'none';
+                    // Clear content after hiding
+                    document.getElementById('task-attachments-scroll').innerHTML = '';
+                    document.getElementById('daily-entries-wrapper').innerHTML = '';
+                    document.getElementById('people-chip-container').innerHTML = '';
+                    document.getElementById('module-chip-container').innerHTML = '';
                 }, 500);
             };
+
+            document.getElementById('task-title-input').addEventListener('input', (e) => autoGrow(e.target));
 
             document.getElementById('modal-container').addEventListener('click', (e) => {
                 if (e.target === document.getElementById('modal-container')) {

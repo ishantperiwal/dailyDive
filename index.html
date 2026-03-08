@@ -998,6 +998,48 @@
             /* Prevents the title from shrinking */
         }
 
+        /* Attachment Pills in Modal */
+        #task-attachments-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 4px 15px 12px 0;
+            margin-top: 8px;
+            -ms-overflow-style: none;
+            /* Hide scrollbar for IE/Edge */
+            scrollbar-width: none;
+            /* Hide scrollbar for Firefox */
+        }
+
+        #task-attachments-scroll::-webkit-scrollbar {
+            display: none;
+            /* Hide scrollbar for Chrome/Safari */
+        }
+
+        .attachment-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #444;
+            white-space: nowrap;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .attachment-pill:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .attachment-pill img {
+            display: block;
+        }
+
         .task-text-latest-entry {
             margin-top: 5px;
             font-size: 16px;
@@ -1990,6 +2032,7 @@
                     <div id="modal-note-content">
                         <textarea id="task-title-input" placeholder="Task Title..." rows="1"
                             enterkeyhint="done"></textarea>
+                        <div id="task-attachments-scroll"></div>
                         <div id="daily-entries-wrapper"></div>
                     </div>
                     <div id="modal-note-footer">
@@ -3743,10 +3786,13 @@
                 modalJustOpened = true;
                 const modalContainer = document.getElementById('modal-container');
                 const taskTitleInput = document.getElementById('task-title-input');
+                const taskAttachmentsScroll = document.getElementById('task-attachments-scroll');
                 const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
                 const peopleChipContainer = document.getElementById('people-chip-container');
                 const moduleChipContainer = document.getElementById('module-chip-container');
                 const hibernateBtn = document.getElementById('hibernate-btn');
+
+                taskAttachmentsScroll.innerHTML = '';
 
                 const handleFocus = (e) => {
                     isKeyboardVisible = true;
@@ -3783,8 +3829,32 @@
                             hibernateBtn.title = 'Hibernate Task';
                         }
                     }
+
+                    if (task.attachments && task.attachments.length > 0) {
+                        task.attachments.forEach(attachment => {
+                            const pill = document.createElement('a');
+                            pill.className = 'attachment-pill';
+                            pill.href = attachment.url;
+                            pill.target = '_blank';
+                            pill.onclick = (e) => e.stopPropagation();
+
+                            let iconHTML = '📄';
+                            if (attachment.url.includes('figma.com')) {
+                                iconHTML = `<img src="figma.png" alt="Figma" width="16" height="16">`;
+                            } else if (attachment.url.includes('atlassian.net')) {
+                                iconHTML = `<img src="jira.png" alt="Jira" width="16" height="16">`;
+                            }
+
+                            pill.innerHTML = `${iconHTML}<span>${attachment.title || 'Untitled'}</span>`;
+                            taskAttachmentsScroll.appendChild(pill);
+                        });
+                        taskAttachmentsScroll.style.display = 'flex';
+                    } else {
+                        taskAttachmentsScroll.style.display = 'none';
+                    }
                 } else {
                     hibernateBtn.style.display = 'none';
+                    taskAttachmentsScroll.style.display = 'none';
                 }
 
                 taskTitleInput.value = task ? task.title : '';
@@ -3999,9 +4069,11 @@
                 setTimeout(() => {
                     modalContainer.style.display = 'none';
                     const taskTitleInput = document.getElementById('task-title-input');
+                    const taskAttachmentsScroll = document.getElementById('task-attachments-scroll');
                     const dailyEntriesWrapper = document.getElementById('daily-entries-wrapper');
                     taskTitleInput.value = '';
                     taskTitleInput.style.height = 'auto';
+                    taskAttachmentsScroll.innerHTML = '';
                     dailyEntriesWrapper.innerHTML = '';
                     editingTaskId = null;
                 }, transitionDuration);

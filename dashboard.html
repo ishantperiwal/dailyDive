@@ -51,7 +51,10 @@
         .app-container {
             max-width: 1200px;
             margin: auto;
-            padding: 20px 25px 60px;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- HEADER --- */
@@ -59,8 +62,14 @@
             display: flex;
             flex-direction: column;
             align-items: stretch;
-            padding: 14px 0 0;
-            margin-bottom: 30px;
+            padding: 14px 26px 4px 26px;
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
         }
 
         .header-top-row {
@@ -137,7 +146,7 @@
         .filter-bar {
             display: flex;
             gap: 10px;
-            padding-bottom: 5px;
+            padding: 8px 4px 16px 4px;
         }
 
         .filter-chip {
@@ -164,187 +173,31 @@
             box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
         }
 
-        /* --- STATS BAR --- */
-        .stats-bar {
-            display: flex;
-            gap: 15px;
-            margin-bottom: var(--section-gap);
-            flex-wrap: wrap;
+        .filter-chip--archive {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
         }
 
-        .stat-card {
-            flex: 1;
-            min-width: 140px;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: var(--card-radius);
-            padding: 20px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            text-align: center;
-            transition: transform 0.2s ease;
+        .filter-chip--archive:hover {
+            background-color: #c8e6c9;
         }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: 600;
-            line-height: 1;
-            margin-bottom: 6px;
-        }
-
-        .stat-value.active-color {
-            color: var(--accent-color);
-        }
-
-        .stat-value.completed-color {
-            color: #28a745;
-        }
-
-        .stat-value.rate-color {
-            background: linear-gradient(135deg, var(--accent-color), #28a745);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: rgba(0, 0, 0, 0.5);
-            font-weight: 500;
-        }
-
-        /* --- SECTIONS --- */
-        .section {
-            margin-bottom: var(--section-gap);
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-
-        .section-header h2 {
-            margin: 0;
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .section-count {
-            background-color: #e9e9f0;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 13px;
-            color: #555;
-            font-weight: 500;
+        /* Mobile bottom filter bar - hidden by default, shown via media query */
+        .filter-bar-container-mobile {
+            display: none;
         }
 
         /* --- TASK GRID --- */
+
         .task-grid {
+            padding: 25px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        /* --- TASK CARD --- */
-        .task-card {
-            height: 180px;
-            border-radius: var(--card-radius);
-            box-shadow: 0 4px 12px var(--shadow-color);
-            border: 1px solid #ffffff;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
-            position: relative;
-        }
-
-        .task-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px var(--shadow-color);
-        }
-
-        .task-card-body {
-            padding: 18px 20px;
+            grid-template-columns: repeat(auto-fit, 320px);
+            gap: 25px;
+            justify-content: center;
             flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .task-card-title {
-            font-size: 17px;
-            font-weight: 600;
-            line-height: 1.4;
-            margin-bottom: 8px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .task-card-meta {
-            margin-top: auto;
-            font-size: 12px;
-            color: rgba(0, 0, 0, 0.45);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .task-card.completed .task-card-title {
-            text-decoration: line-through;
-            color: rgba(0, 0, 0, 0.5);
-        }
-
-        .task-card.completed {
-            opacity: 0.75;
-        }
-
-        .task-card.hibernated {
-            opacity: 0.65;
-        }
-
-        .hibernated-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 16px;
-            opacity: 0.7;
-        }
-
-        .active-days-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.08);
-            padding: 3px 8px;
-            border-radius: 8px;
-            font-size: 11px;
-            font-weight: 600;
-            color: rgba(0, 0, 0, 0.5);
-        }
-
-        /* --- TASK TAGS --- */
-        .task-card-tags {
-            padding: 0 10px 10px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .task-tag {
-            background-color: rgba(0, 0, 0, 0.07);
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            color: rgba(0, 0, 0, 0.6);
+            align-content: start;
         }
 
         /* --- LOADING & EMPTY STATES --- */
@@ -439,8 +292,1737 @@
                 gap: 15px;
             }
 
-            .task-card {
-                height: 160px;
+            .task-item {
+                height: 205px;
+            }
+        }
+
+        .task-item {
+            height: 220px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s ease, opacity 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px;
+            border: 1px solid #ffffff;
+            transform: rotate(var(--rotation-deg, 0deg));
+        }
+
+        .task-item:has(.task-content:active) {
+            transform: rotate(var(--rotation-deg, 0deg)) scale(0.97);
+            transition-duration: 0.05s;
+        }
+
+        .task-item.is-interacting {
+            z-index: 10;
+            box-shadow: 0 8px 20px var(--shadow-color);
+            transform: rotate(0deg) scale(1.03) translateY(-5px) !important;
+            transition-duration: 0.25s;
+        }
+
+        .task-content {
+            padding: 20px 22px;
+            font-size: 18px;
+            line-height: 1.5;
+            width: 100%;
+            flex-grow: 1;
+            box-sizing: border-box;
+            user-select: none;
+            transition: color 0.3s, transform 0.3s ease;
+            cursor: grab;
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* ADDED: Helps browser distinguish scroll vs swipe */
+            touch-action: pan-y;
+        }
+
+        .task-item.completed,
+        .task-item.hibernated {
+            opacity: 0.7;
+        }
+
+        .task-item.completed .task-content {
+            color: rgba(0, 0, 0, 0.5);
+            cursor: default;
+        }
+
+        .task-item.completed .task-text-display {
+            text-decoration: line-through;
+        }
+
+        .task-item.is-completing .task-content .task-text-display {
+            text-decoration: line-through;
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .task-tags-container {
+            padding: 0 10px 10px 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .task-tag {
+            background-color: rgba(0, 0, 0, 0.07);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .archive-btn {
+            background-color: var(--archive-bg);
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100px;
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            opacity: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            flex-direction: column;
+            gap: 5px;
+            line-height: 1;
+        }
+
+        .days-to-complete {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .task-item.completed .archive-btn {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.6s;
+        }
+
+        .task-item.is-sliding-complete {
+            opacity: 0.7;
+        }
+
+        .task-item.is-sliding-uncomplete {
+            opacity: 1;
+        }
+
+        .task-item.is-sliding-uncomplete .archive-btn {
+            opacity: 0;
+            transform: translateX(100%);
+            transition-delay: 0s;
+        }
+
+        .uncomplete-placeholder {
+            width: 40px;
+            font-size: 24px;
+            color: var(--accent-color);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #add-task-btn {
+            position: fixed;
+            bottom: 30px;
+            right: calc(50% - min(600px, 50vw) + 30px);
+            width: 60px;
+            height: 60px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 36px;
+            box-shadow: 0 6px 15px rgba(0, 122, 255, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        #add-task-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #calendar-view {
+            display: none;
+            padding: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h2 {
+            margin: 0;
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .calendar-nav-btn {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .calendar-nav-btn:hover {
+            background-color: #f7f7f7;
+        }
+
+        .calendar-grid-container {}
+
+        #calendar-wrapper {
+            overflow: hidden;
+        }
+
+        #calendar-slider {
+            display: flex;
+            width: 300%;
+            position: relative;
+            transform: translateX(-33.3333%);
+        }
+
+        .calendar-month-grid {
+            width: 33.3333%;
+            position: relative;
+            /* Removed flex properties and min-height to allow this container to grow vertically with its content. */
+        }
+
+        .day-grid-wrapper {
+            position: relative;
+            /* Changed from 'absolute' so this element exists in the page's layout flow. */
+            /* Removed top, left, and height, so its size is determined by the actual grid rows. */
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .loading-text {
+            font-size: 20px;
+            font-weight: 500;
+            color: #a0a0a0;
+            text-align: center;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            padding: 10px 0;
+            font-weight: bold;
+            color: #777;
+        }
+
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: minmax(120px, auto);
+            position: relative;
+        }
+
+        .day-cell {
+            border-right: 1px solid #eee;
+            border-top: 1px solid #eee;
+            padding: 8px;
+            position: relative;
+        }
+
+        .day-cell:nth-child(7n) {
+            border-right: none;
+        }
+
+        .day-cell.other-month .day-number {
+            color: #ccc;
+        }
+
+        .day-cell.today .day-number {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .day-cell .day-number {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .day-cell .day-number:hover {
+            transform: scale(1.1);
+        }
+
+        .day-cell.holiday {
+            background-color: #dadada;
+        }
+
+        .task-bar {
+            position: absolute;
+            height: 24px;
+            color: #1f1f1f;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.6);
+            border-radius: 4px;
+            font-size: 12px;
+            padding: 0 8px;
+            box-sizing: border-box;
+            line-height: 24px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 1;
+            cursor: pointer;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .task-bar.completed {
+            background-image: repeating-linear-gradient(45deg,
+                    rgba(0, 0, 0, 0.1),
+                    rgba(0, 0, 0, 0.1) 4px,
+                    transparent 4px,
+                    transparent 8px);
+        }
+
+        .task-bar.has-prev-indicator {
+            padding-left: 28px;
+        }
+
+        .task-bar.has-next-indicator {
+            padding-right: 28px;
+        }
+
+        .task-continuation-indicator {
+            position: absolute;
+            top: -1px;
+            bottom: -1px;
+            width: 20px;
+            background: rgba(0, 0, 0, 0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .task-continuation-indicator.prev {
+            left: 0;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .task-continuation-indicator.next {
+            right: 0;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        #modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 550;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #modal-container.show {
+            opacity: 1;
+        }
+
+        .modal-content {
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        #modal-container.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .modal-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            margin: 0;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: transform .2s ease, background-color .2s;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .modal-btn#confirm-add-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .modal-btn#hibernate-btn {
+            background-color: var(--hibernate-color);
+            color: white;
+        }
+
+        .modal-btn#modal-back-btn {
+            background-color: transparent;
+            color: #555;
+            box-shadow: none;
+            padding: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-btn#modal-back-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            transform: scale(1.1);
+        }
+
+        .is-entering {
+            opacity: 0;
+            transform: translateY(-60px) scale(1.1) rotate(var(--start-rotation-deg));
+        }
+
+        @keyframes cardBounce {
+
+            0%,
+            100% {
+                transform: scale(1) rotate(var(--rotation-deg));
+            }
+
+            30% {
+                transform: scale(0.95) rotate(var(--rotation-deg));
+            }
+
+            60% {
+                transform: scale(1.05) rotate(var(--rotation-deg));
+            }
+        }
+
+        .task-edited-animation {
+            animation: cardBounce 0.6s ease-in-out;
+        }
+
+        @keyframes taskBarBlink {
+
+            0%,
+            50%,
+            100% {
+                opacity: 1;
+            }
+
+            25%,
+            75% {
+                opacity: 0.4;
+            }
+        }
+
+        .task-bar-edited-animation {
+            animation: taskBarBlink 0.8s ease-in-out;
+        }
+
+        .time-ago {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.5);
+            margin-bottom: 8px;
+        }
+
+        .modal-note {
+            width: 440px;
+            max-width: 95vw;
+            background-color: #fffc79;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            max-height: 80vh;
+        }
+
+        #modal-note-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 25px;
+        }
+
+        #task-title-input,
+        .daily-entry-textarea {
+            font-family: 'Bricolage Grotesque', sans-serif;
+        }
+
+        #task-title-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 25px 0 15px 0;
+            font-size: 22px;
+            font-weight: 600;
+            line-height: 1.3;
+            box-sizing: border-box;
+            width: 100%;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            resize: none;
+            overflow-y: hidden;
+        }
+
+        .daily-entry-container {
+            margin-top: 15px;
+        }
+
+        /* This class seems unused, can be removed */
+        .daily-entry-date {
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(0, 0, 0, 0.6);
+            margin: 2px 0 8px 6px;
+            text-align: left;
+            letter-spacing: 0.4px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .daily-entry-date.is-holiday {
+            color: #e57373;
+            cursor: pointer;
+            letter-spacing: 0.4px;
+            pointer-events: none;
+        }
+
+        .daily-entry-textarea {
+            background: transparent;
+            min-height: 60px;
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 16px;
+            line-height: 1.5;
+            box-sizing: border-box;
+            resize: none;
+            text-align: left;
+            transition: background-color 0.5s ease;
+            padding: 6px;
+            /* Symmetrical padding for consistency */
+            /* Normalization styles to ensure consistency between div and textarea */
+            display: block;
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .hibernation-event-pill {
+            font-size: 10px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #fff;
+        }
+
+        .hibernation-event-pill.hibernated,
+        .hibernation-event-pill.activated {
+            background-color: rgba(0, 0, 0, 0.12);
+            color: #464646;
+        }
+
+        .hibernation-event-pill.completed {
+            background-color: var(--checkmark-color);
+        }
+
+        .daily-entry-textarea.is-editing {
+            padding: 0;
+        }
+
+        /* --- TIMELINE VIEW STYLES --- */
+        #daily-entries-wrapper.timeline-view {
+            position: relative;
+            padding: 15px 0 15px 20px;
+        }
+
+        .timeline-entry {
+            display: flex;
+            position: relative;
+            align-items: flex-start;
+            /* Align items to the top */
+            padding-bottom: 20px;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -20px;
+            top: 0;
+            width: 20px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .timeline-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.2);
+            z-index: 2;
+            position: absolute;
+            top: 5px;
+            left: 4.5px;
+            /* (20px marker width - 11px dot width) / 2 */
+        }
+
+        .timeline-line {
+            position: absolute;
+            top: 16px;
+            /* Start the line just below the dot */
+            width: 1px;
+            left: 9.5px;
+            /* (20px marker width - 1px line width) / 2 */
+            height: calc(100% - 16px);
+            /* End the line before the next dot starts */
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-entry:last-child .timeline-line {
+            display: none;
+        }
+
+        .timeline-content {
+            padding-top: 1px;
+            /* Small adjustment for alignment */
+            flex-grow: 1;
+        }
+
+        #modal-note-footer {
+            padding: 10px 0;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            padding: 0 15px 15px 15px;
+        }
+
+        .chip {
+            background-color: rgba(80, 85, 90, 0.7);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color .2s;
+        }
+
+        .chip.selected {
+            background-color: #343a40;
+        }
+
+        .add-tag-btn {
+            background: rgba(80, 85, 90, 0.7);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            width: 28px;
+            height: 28px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #new-tag-input {
+            background-color: rgba(255, 255, 255, 0.7);
+            color: #333;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            border: none;
+            outline: none;
+            width: 80px;
+        }
+
+        .tag-section-modal {
+            padding: 10px 0;
+        }
+
+        .tag-title-modal {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6c757d;
+            margin: 0 0 10px 15px;
+            text-align: left;
+        }
+
+        .task-text-display {
+            white-space: pre-wrap;
+            /* Additions for robust layout */
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Ensures content clipping */
+            min-height: 0;
+            /* Prevents flex item from overflowing its container */
+        }
+
+        .task-text-title {
+            font-weight: 600;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+            /* Prevents the title from shrinking */
+        }
+
+        .task-text-latest-entry {
+            margin-top: 5px;
+            font-size: 16px;
+            opacity: 0.8;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+        }
+
+        #sticker-orb {
+            position: fixed;
+            bottom: 30px;
+            left: calc(50% - min(600px, 50vw) + 30px);
+            z-index: 150;
+            /* Lowered to be behind archive view */
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .sticker-orb-face {
+            width: 60px;
+            height: 60px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: grab;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .sticker-orb-face:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        .sticker-orb-face:active {
+            cursor: grabbing;
+        }
+
+        body:not(.is-mobile).calendar-active #add-task-btn,
+        body:not(.is-mobile).calendar-active #sticker-orb {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        .sticker-display-area {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            display: flex;
+            gap: 5px;
+            z-index: 6;
+        }
+
+        .sticker-link {
+            font-size: 22px;
+            /* Increased by 10% from 20px */
+            text-decoration: none;
+            transition: transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sticker-link:active {
+            transform: scale(0.8);
+        }
+
+        .task-item.drag-over {
+            border: 2px dashed var(--accent-color);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
+        }
+
+        #attachment-modal-container,
+        #confirmation-modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 600;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #attachment-modal-container.show,
+        #confirmation-modal-container.show {
+            opacity: 1;
+        }
+
+        .attachment-modal-content,
+        .confirmation-modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 380px;
+            max-width: 90vw;
+            transform: scale(0.95);
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        #attachment-modal-container.show .attachment-modal-content,
+        #confirmation-modal-container.show .confirmation-modal-content {
+            transform: scale(1);
+        }
+
+        #attachment-modal-icon {
+            font-size: 32px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #555;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #attachment-url-input {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-family: inherit;
+            resize: none;
+            overflow-y: hidden;
+            min-height: 40px;
+            line-height: 1.4;
+        }
+
+        #attachment-modal-save-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .attachment-ghost {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.8;
+            transform: translate(-50%, -50%);
+            color: #333;
+        }
+
+        .confirmation-modal-content {
+            /* Styles are now combined with .attachment-modal-content */
+        }
+
+        #confirmation-modal-icon {
+            font-size: 32px;
+            margin: 0 0 15px 0;
+            color: var(--delete-color);
+        }
+
+        #confirmation-modal-message {
+            margin: 0 0 25px 0;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .confirmation-modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .confirmation-modal-buttons button {
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        #confirmation-modal-cancel-btn {
+            background-color: #e9e9f0;
+            color: #333;
+        }
+
+        #confirmation-modal-confirm-btn {
+            background-color: var(--delete-color);
+            color: white;
+        }
+
+        @keyframes slide-out-left {
+            to {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slide-in-from-right {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slide-out-right {
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slide-in-from-left {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background-color: rgba(30, 30, 30, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            pointer-events: none;
+        }
+
+        #toast-container.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+
+        #toast-message {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        #toast-message.error {
+            color: #ff8a8a;
+        }
+
+        #toast-message.syncing {
+            color: #87cefa;
+        }
+
+        #toast-authorize-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #toast-authorize-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- MOBILE-SPECIFIC STYLES --- */
+        #mobile-bottom-bar {
+            display: none;
+        }
+
+        body.is-mobile header {
+            padding-left: 0;
+            padding-right: 0;
+            cursor: pointer;
+        }
+
+        body.is-mobile .header-top-row {
+            padding: 0 20px;
+        }
+
+        body.is-mobile #filter-bar-container {
+            max-height: 0;
+            overflow-y: hidden;
+            /* Changed from 'overflow: hidden' to allow horizontal scroll */
+            transition: max-height 0.3s ease-in-out;
+        }
+
+        body.is-mobile header.filters-visible #filter-bar-container {
+            max-height: 45px;
+        }
+
+        body.is-mobile #filter-bar {
+            padding: 0 0 14px 20px;
+        }
+
+        body.is-mobile #filter-bar::after {
+            flex-basis: 1px;
+        }
+
+
+
+        body.is-mobile .modal-content {
+            width: 100%;
+            height: 100%;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            overflow: hidden;
+            /* Prevent modal content itself from scrolling/overshooting */
+        }
+
+        body.is-mobile #modal-container.show .modal-content {
+            transform: translateY(0);
+        }
+
+        body.is-mobile #task-form {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        body.is-mobile .modal-note {
+            border-radius: 0;
+            flex-grow: 1;
+            height: 100%;
+            /* Ensure it takes available space */
+            max-height: none;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Mobile Layout: Pin Title & Footer, Scroll Entries */
+        body.is-mobile #modal-note-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            overflow: hidden;
+            padding: 0 25px;
+            /* Keep horizontal padding */
+        }
+
+        body.is-mobile #task-title-input {
+            flex-shrink: 0;
+            /* Keep title fixed size/visible */
+        }
+
+        body.is-mobile #daily-entries-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
+        }
+
+        body.is-mobile .modal-controls {
+            padding: 10px 20px 20px 20px;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            margin-top: 0;
+            background-color: #fffc79;
+            flex-shrink: 0;
+            /* Ensure controls don't shrink */
+        }
+
+        body.is-mobile #hibernate-btn {
+            background-color: #f5a623;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        body.is-mobile #modal-back-btn {
+            background-color: transparent;
+            color: #555;
+            box-shadow: none;
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.is-mobile #confirm-add-btn {
+            width: auto;
+            flex-grow: 1;
+            border-radius: 42px;
+            height: 50px;
+            margin: 0;
+        }
+
+        body.is-mobile #mobile-bottom-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 25px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            background: rgba(248, 248, 248, 0.85);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            z-index: 150;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        body.is-mobile #mobile-bottom-bar.show {
+            transform: translateY(0);
+        }
+
+        body.is-mobile #add-task-btn,
+        body.is-mobile #sticker-orb {
+            position: static;
+            transform: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        body.is-mobile.calendar-active #add-task-btn,
+        body.is-mobile.calendar-active #sticker-orb {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        body.is-mobile #add-task-btn {
+            width: 42px;
+            height: 42px;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
+        }
+
+        body.is-mobile .sticker-orb-face {
+            width: 42px;
+            height: 42px;
+            font-size: 22px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        body.is-mobile .header-top-row {
+            justify-content: center;
+        }
+
+        body.is-mobile header h1 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 0;
+        }
+
+        body.is-mobile #auth-container {
+            display: none;
+        }
+
+        body.is-mobile .header-top-row>.view-toggle {
+            display: none;
+        }
+
+        body.is-mobile #task-list-view,
+        body.is-mobile #calendar-view {
+            padding-bottom: 100px;
+        }
+
+        body.is-mobile .task-item {
+            height: 205px;
+        }
+
+        /* --- ARCHIVE VIEW STYLES --- */
+        .archive-view-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background);
+            background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+            background-size: 25px 25px;
+            z-index: 500;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .archive-view-container.show {
+            transform: translateY(0);
+        }
+
+        .archive-header {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 14px 0 0 0;
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            flex-shrink: 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        body:not(.is-mobile) .archive-header {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .archive-header-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 26px;
+            margin-bottom: 15px;
+        }
+
+        .archive-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .close-archive-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            font-weight: 300;
+            color: #555;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            transition: color 0.2s ease;
+        }
+
+        body.is-mobile .archive-header {
+            padding: 0;
+        }
+
+        body.is-mobile .archive-header-top-row {
+            padding: 0 8px;
+            margin: 0 20px;
+            margin-bottom: 16px;
+            margin-top: 10px;
+        }
+
+        body.is-mobile #archive-filter-bar {
+            padding: 8px 0px 0px 20px;
+        }
+
+        #archive-filter-bar-container {
+            width: 100%;
+            overflow-x: auto;
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        #archive-filter-bar-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        #archive-filter-bar {
+            display: flex;
+            gap: 10px;
+            padding: 0 26px 15px 26px;
+        }
+
+        #archive-filter-bar::after {
+            content: '';
+            flex: 0 0 8px;
+            /* Provides a 16px spacer on the right */
+        }
+
+        body:not(.is-mobile) .archive-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .archive-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 5px 25px 25px;
+            text-align: center;
+        }
+
+        .archive-month-header {
+            display: inline-block;
+            padding: 6px 16px;
+            margin: 20px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6c757d;
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .archive-month-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 320px);
+            gap: 25px;
+            justify-content: center;
+            padding-bottom: 15px;
+        }
+
+        .task-item.is-archived {
+            height: 160px;
+            text-align: left;
+        }
+
+        .task-item.is-archived .task-text-title {
+            -webkit-line-clamp: 4;
+        }
+
+        .task-item.is-archived .task-content {
+            padding-right: 90px;
+        }
+
+        .restore-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 80px;
+            align-self: stretch;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            opacity: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            flex-direction: column;
+            gap: 4px;
+            line-height: 1;
+        }
+
+        .task-item.is-archived .restore-btn {
+            opacity: 1;
+            transform: translateX(0);
+            transition-delay: 0.5s;
+        }
+
+        .restore-btn-text {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        @keyframes fly-out-top-right {
+            from {
+                transform: scale(1) translate(0, 0) rotate(var(--rotation-deg));
+                opacity: 1;
+            }
+
+            to {
+                transform: scale(0.5) translate(60vw, -60vh) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        .task-item.is-archiving {
+            animation: fly-out-top-right 0.6s cubic-bezier(0.7, 0.085, 0.8, 0.8) forwards;
+            z-index: 20;
+            /* Ensure it flies over other cards */
+        }
+
+        @keyframes scale-down-fade-out {
+            from {
+                transform: scale(1) rotate(var(--rotation-deg));
+                opacity: 1;
+            }
+
+            to {
+                transform: scale(0.8) rotate(var(--rotation-deg));
+                opacity: 0;
+            }
+        }
+
+        .task-item.is-restoring {
+            animation: scale-down-fade-out 0.25s cubic-bezier(0.7, 0.085, 0.8, 0.8) forwards;
+        }
+
+
+        body.is-mobile .archive-header {
+            padding: 14px 0px;
+        }
+
+        body.is-mobile .archive-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        body.is-mobile .archive-month-header {
+            padding-top: 6px;
+        }
+
+        body.is-mobile .task-item.is-archived {
+            height: 164px;
+        }
+
+        /* Redirection Modal Styles */
+        #redirection-modal-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 700;
+            /* Higher than other modals */
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #redirection-modal-container.show {
+            opacity: 1;
+        }
+
+        .redirection-modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 300px;
+            max-width: 90vw;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #redirection-modal-container.show .redirection-modal-content {
+            transform: scale(1);
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--accent-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .redirection-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        #redirection-title {
+            color: var(--accent-color);
+        }
+
+        #export-pdf-btn {
+            position: fixed;
+            bottom: 30px;
+            /* Sticker orb is at left: calc(50% - min(600px, 50vw) + 30px); width 60px.
+               We place this 20px to the right of it. */
+            left: calc(50% - min(600px, 50vw) + 30px + 80px);
+            z-index: 150;
+            width: 60px;
+            height: 60px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            border: none;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #333;
+        }
+
+        #export-pdf-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        #export-pdf-btn:active {
+            transform: scale(0.95);
+        }
+
+        body:not(.is-mobile).calendar-active #export-pdf-btn {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+
+        /* Mobile adjustment if needed, assuming sticker orb logic applies */
+        body.is-mobile #export-pdf-btn {
+            /* If sticker orb is handled specifically on mobile, we might need adjustments. 
+                For now, keep it simple or hide if sticker orb is hidden. */
+            display: none;
+        }
+
+
+        #redirection-url {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        #attachment-title-input {
+            border: none;
+            outline: none;
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+
+            padding: 10px 20px;
+            align-items: center;
+            text-align: center;
+            margin: 20px;
+            margin-top: 8px;
+        }
+
+        /* ===== RESPONSIVE / MOBILE ===== */
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding-top: 0;
+                padding-bottom: 100px;
+            }
+
+            body {
+                padding-bottom: 16px;
+            }
+
+            header {
+                padding: 12px 16px 12px 16px;
+                border-bottom-left-radius: 12px;
+                border-bottom-right-radius: 12px;
+            }
+
+            .header-top-row {
+                margin-bottom: 0;
+            }
+
+            /* Hide filter bar inside header on mobile */
+            header .filter-bar-container {
+                display: none;
+            }
+
+            /* Bottom fixed filter bar for mobile */
+            .filter-bar-container-mobile {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                z-index: 100;
+                background-color: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-top: 1px solid rgba(0, 0, 0, 0.08);
+                overflow-x: auto;
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+                padding: 10px 12px;
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+
+            .filter-bar-container-mobile::-webkit-scrollbar {
+                display: none;
+            }
+
+            .task-grid {
+                padding: 16px;
+                gap: 16px;
+                grid-template-columns: 1fr;
+                padding-bottom: 100px;
+                /* space for bottom filter bar */
+            }
+
+            .task-item {
+                width: 100% !important;
+                min-width: unset !important;
+                max-width: 100% !important;
+            }
+
+            .archive-month-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .archive-header-top-row {
+                padding: 0 16px;
+            }
+
+            .archive-content {
+                padding: 16px;
+            }
+
+            /* Modal adjustments */
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .modal-note {
+                max-height: 85vh;
+            }
+
+            .filter-chip {
+                font-size: 13px;
+                padding: 5px 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 16px;
+            }
+
+            .task-grid {
+                padding: 12px;
+                gap: 14px;
+            }
+
+            .last-synced {
+                font-size: 10px;
+            }
+
+            .refresh-btn {
+                width: 32px;
+                height: 32px;
+            }
+
+            .header-meta {
+                gap: 8px;
+            }
+
+            .archive-header-top-row {
+                padding: 0 12px;
+            }
+
+            .archive-content {
+                padding: 12px;
+            }
+
+            .archive-month-header {
+                font-size: 12px;
             }
         }
     </style>
@@ -450,9 +2032,8 @@
     <div class="app-container">
         <header>
             <div class="header-top-row">
-                <h1>📋 Daily Dive Dashboard</h1>
+                <h1>📋 I'm working on</h1>
                 <div class="header-meta">
-                    <span id="last-synced" class="last-synced"></span>
                     <button id="refresh-btn" class="refresh-btn" title="Refresh Data">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -469,38 +2050,9 @@
             </div>
         </header>
 
-        <!-- Stats Bar -->
-        <div id="stats-bar" class="stats-bar" style="display: none;">
-            <div class="stat-card animate-in">
-                <div id="stat-active" class="stat-value active-color">0</div>
-                <div class="stat-label">Active Tasks</div>
-            </div>
-            <div class="stat-card animate-in" style="animation-delay: 0.05s;">
-                <div id="stat-completed" class="stat-value completed-color">0</div>
-                <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-card animate-in" style="animation-delay: 0.1s;">
-                <div id="stat-rate" class="stat-value rate-color">0%</div>
-                <div class="stat-label">Completion Rate</div>
-            </div>
-        </div>
-
-        <!-- Active Tasks Section -->
-        <div id="active-section" class="section" style="display: none;">
-            <div class="section-header">
-                <h2>🔵 Active</h2>
-                <span id="active-count" class="section-count">0</span>
-            </div>
-            <div id="active-grid" class="task-grid"></div>
-        </div>
-
-        <!-- Completed Tasks Section -->
-        <div id="completed-section" class="section" style="display: none;">
-            <div class="section-header">
-                <h2>✅ Finished</h2>
-                <span id="completed-count" class="section-count">0</span>
-            </div>
-            <div id="completed-grid" class="task-grid"></div>
+        <!-- Tasks Section -->
+        <div id="tasks-section" class="section">
+            <div id="tasks-grid" class="task-grid"></div>
         </div>
 
         <!-- Loading State -->
@@ -511,6 +2063,91 @@
 
         <!-- Error State -->
         <div id="error-state" class="error-state" style="display: none;"></div>
+    </div>
+
+    <div id="modal-container">
+        <div class="modal-content">
+            <form id="task-form">
+                <div class="modal-note">
+                    <div id="modal-note-content">
+                        <textarea id="task-title-input" placeholder="Task Title..." rows="1"
+                            enterkeyhint="done"></textarea>
+                        <div id="daily-entries-wrapper"></div>
+                    </div>
+                    <div id="modal-note-footer">
+                        <div class="tag-section-modal">
+                            <h3 class="tag-title-modal">People</h3>
+                            <div id="people-chip-container" class="chip-container"></div>
+                        </div>
+                        <div class="tag-section-modal">
+                            <h3 class="tag-title-modal">Modules</h3>
+                            <div id="module-chip-container" class="chip-container"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-controls">
+                    <button id="modal-back-btn" class="modal-btn" type="button">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
+                    <button id="confirm-add-btn" class="modal-btn" type="submit">&#10003;</button>
+                    <button id="hibernate-btn" class="modal-btn" type="button">💤</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="attachment-modal-container">
+        <div class="attachment-modal-content">
+            <h2 id="attachment-modal-icon"></h2>
+            <input id="attachment-title-input" placeholder="Add a title (optional)" rows="1"
+                style=" font-weight: bold; font-size: 16px;"></textarea>
+            <textarea id="attachment-url-input" placeholder="https://example.com" rows="1"></textarea>
+            <div id="attachment-modal-buttons" class="confirmation-modal-buttons" style="margin-top: 20px;">
+                <button id="attachment-modal-delete-btn"
+                    style="background-color: var(--delete-color); color: white; display: none;">Delete</button>
+                <button id="attachment-modal-save-btn">Save Link</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmation-modal-container">
+        <div class="confirmation-modal-content">
+            <div id="confirmation-modal-icon"></div>
+            <p id="confirmation-modal-message"></p>
+            <div class="confirmation-modal-buttons">
+                <button id="confirmation-modal-cancel-btn">Cancel</button>
+                <button id="confirmation-modal-confirm-btn">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="redirection-modal-container">
+        <div class="redirection-modal-content">
+            <div class="loader"></div>
+            <p class="redirection-text">Opening <span id="redirection-title"></span>...</p>
+            <div id="redirection-url"></div>
+        </div>
+    </div>
+
+    <!-- Completed (Archive) View Overlay -->
+    <div id="archive-view" class="archive-view-container">
+        <div class="archive-header">
+            <div class="archive-header-top-row">
+                <h2>Completed Tasks</h2>
+                <button class="close-archive-btn" id="close-archive-btn">&times;</button>
+            </div>
+        </div>
+        <div class="archive-content" id="archive-content">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Mobile bottom filter bar -->
+    <div class="filter-bar-container-mobile">
+        <div id="filter-bar-mobile" class="filter-bar"></div>
     </div>
 
     <script>
@@ -526,6 +2163,7 @@
 
             let allTasks = [];
             let activeFilter = null;
+            let showArchived = false; // toggle between Active and Archived views
 
             // --- CSV PARSER ---
             const parseCSV = (csvText) => {
@@ -590,6 +2228,11 @@
                     let tags = { people: [], modules: [] };
                     try { tags = JSON.parse(tagsJson); } catch (e) { }
 
+                    // Parse attachments JSON
+                    const attachmentsJson = row[7] || '[]';
+                    let attachments = [];
+                    try { attachments = JSON.parse(attachmentsJson); } catch (e) { }
+
                     // Parse content JSON to detect hibernation
                     let isHibernated = false;
                     try {
@@ -612,9 +2255,12 @@
                         createdAt,
                         completedAt,
                         archived,
-                        peopleTags: tags.people || [],
-                        moduleTags: tags.modules || [],
-                        color: noteColors[index % noteColors.length]
+                        peopleTags: (tags.people || []).map(t => t.replace(/^@/, '')),
+                        moduleTags: (tags.modules || []).map(t => t.replace(/^#/, '')),
+                        color: noteColors[index % noteColors.length],
+                        content: (typeof contentJson === 'string' && contentJson.trim().startsWith('{')) ? JSON.parse(contentJson) : {},
+                        tags: tags,
+                        attachments: attachments
                     };
                 } catch (e) {
                     console.error('Error parsing task row:', e, row);
@@ -700,132 +2346,289 @@
                 return `${Math.floor(diffMonths / 12)}y ago`;
             };
 
+
             const escapeHtml = (text) => {
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
             };
 
+            const isTaskHibernated = (task) => task.status === 'Hibernated';
+
+            const showModal = (task) => {
+                const modalParams = {
+                    title: task.title || 'Untitled',
+                    content: task.content || {},
+                    tags: task.tags || { people: task.peopleTags || [], modules: task.moduleTags || [] }
+                };
+
+                const titleInput = document.getElementById('task-title-input');
+                titleInput.value = modalParams.title;
+                titleInput.readOnly = true;
+
+                document.getElementById('confirm-add-btn').style.display = 'none';
+                document.getElementById('hibernate-btn').style.display = 'none';
+
+                const entriesWrapper = document.getElementById('daily-entries-wrapper');
+                entriesWrapper.innerHTML = '';
+                entriesWrapper.className = 'timeline-view';
+
+                const sortedKeys = Object.keys(modalParams.content).filter(k => k !== '_hibernation').sort();
+
+                if (sortedKeys.length === 0) {
+                    const emptyState = document.createElement('div');
+                    emptyState.style.padding = '20px';
+                    emptyState.style.textAlign = 'center';
+                    emptyState.style.color = '#777';
+                    emptyState.textContent = 'No journal entries yet.';
+                    entriesWrapper.appendChild(emptyState);
+                } else {
+                    sortedKeys.forEach((key, idx) => {
+                        const entryText = modalParams.content[key];
+                        const entryDiv = document.createElement('div');
+                        entryDiv.className = 'timeline-entry';
+
+                        const dateObj = new Date(key);
+                        let dateStr = key;
+                        if (!isNaN(dateObj.getTime())) {
+                            dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                        }
+
+                        let lineHtml = (idx < sortedKeys.length - 1) ? '<div class="timeline-line"></div>' : '';
+
+                        entryDiv.innerHTML = `
+                            <div class="timeline-marker">
+                                <div class="timeline-dot"></div>
+                                ${lineHtml}
+                            </div>
+                            <div class="timeline-content">
+                                <div class="daily-entry-date">${dateStr}</div>
+                                <div class="daily-entry-textarea" style="opacity: 0.8;">${escapeHtml(entryText)}</div>
+                            </div>
+                        `;
+                        entriesWrapper.appendChild(entryDiv);
+                    });
+                }
+
+                const renderTags = (containerId, tagsArray) => {
+                    const container = document.getElementById(containerId);
+                    container.innerHTML = '';
+                    if (!tagsArray || tagsArray.length === 0) {
+                        container.innerHTML = '<span style="color: #999; font-size: 13px;">None</span>';
+                        return;
+                    }
+                    tagsArray.forEach(t => {
+                        const chip = document.createElement('div');
+                        chip.className = 'chip';
+                        chip.textContent = t;
+                        container.appendChild(chip);
+                    });
+                };
+
+                renderTags('people-chip-container', modalParams.tags.people);
+                renderTags('module-chip-container', modalParams.tags.modules);
+
+                const modal = document.getElementById('modal-container');
+                modal.style.display = 'flex';
+                void modal.offsetWidth;
+                modal.classList.add('show');
+            };
+
+            const hideModal = () => {
+                const modal = document.getElementById('modal-container');
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 500);
+            };
+
+            document.getElementById('modal-container').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('modal-container')) {
+                    hideModal();
+                }
+            });
+
+            document.getElementById('modal-back-btn').addEventListener('click', hideModal);
+
             const createTaskCard = (task, index) => {
-                const card = document.createElement('div');
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item animate-in';
+                taskItem.style.animationDelay = `${index * 0.04}s`;
+
                 const isCompleted = task.status === 'Completed';
                 const isHibernated = task.status === 'Hibernated';
 
-                card.className = `task-card animate-in ${isCompleted ? 'completed' : ''} ${isHibernated ? 'hibernated' : ''}`;
-                card.style.animationDelay = `${index * 0.04}s`;
-                card.style.backgroundColor = task.color;
+                if (isCompleted) taskItem.classList.add('completed');
+                else if (isHibernated) taskItem.classList.add('hibernated');
 
-                let badgeHtml = '';
-                if (isHibernated) {
-                    badgeHtml = '<div class="hibernated-badge">💤</div>';
-                }
+                taskItem.dataset.id = task.id;
+                taskItem.style.backgroundColor = task.color;
 
-                let metaHtml = '';
+                const rotation = (index % 2 === 0 ? 1.5 : -1.5);
+                const startRotation = (rotation > 0) ? -10 : 10;
+                taskItem.style.setProperty('--rotation-deg', `${rotation}deg`);
+                taskItem.style.setProperty('--start-rotation-deg', `${startRotation}deg`);
+                taskItem.style.transform = `rotate(${rotation}deg)`;
+
+                const taskContent = document.createElement('div');
+                taskContent.className = 'task-content';
+
+                const timeAgo = document.createElement('div');
+                timeAgo.className = 'time-ago';
+
                 if (isCompleted && task.completedAt) {
-                    metaHtml = `<span>Completed ${getRelativeTime(task.completedAt)}</span>`;
+                    timeAgo.textContent = `Completed ${getRelativeTime(task.completedAt)}`;
+                } else if (isHibernated) {
+                    timeAgo.textContent = 'Hibernated';
                 } else {
-                    metaHtml = `<span>Started ${getRelativeTime(task.createdAt)}</span>`;
+                    timeAgo.textContent = `Started ${getRelativeTime(task.createdAt)}`;
                 }
+                taskContent.appendChild(timeAgo);
 
-                // Tags
+                const textDisplay = document.createElement('div');
+                textDisplay.className = 'task-text-display';
+
+                const titleDisplay = document.createElement('div');
+                titleDisplay.className = 'task-text-title';
+                titleDisplay.textContent = task.title || 'Untitled Task';
+                textDisplay.appendChild(titleDisplay);
+
+                let latestEntryDisplay = null;
+                if (typeof task.content === 'object' && task.content !== null) {
+                    const contentKeys = Object.keys(task.content).filter(k => k !== '_hibernation').sort().reverse();
+                    if (contentKeys.length > 0) {
+                        const latestEntryText = task.content[contentKeys[0]];
+                        latestEntryDisplay = document.createElement('div');
+                        latestEntryDisplay.className = 'task-text-latest-entry';
+                        latestEntryDisplay.textContent = latestEntryText;
+                        textDisplay.appendChild(latestEntryDisplay);
+                    }
+                }
+                taskContent.appendChild(textDisplay);
+
+                const tagsContainer = document.createElement('div');
+                tagsContainer.className = 'task-tags-container';
                 const allTags = [
-                    ...task.peopleTags.map(t => `@${t}`),
-                    ...task.moduleTags.map(t => `#${t}`)
+                    ...(task.peopleTags || []),
+                    ...(task.moduleTags || [])
                 ];
+                allTags.forEach(tagText => {
+                    const tagEl = document.createElement('span');
+                    tagEl.className = 'task-tag';
+                    tagEl.textContent = tagText;
+                    tagsContainer.appendChild(tagEl);
+                });
 
-                let tagsHtml = '';
-                if (allTags.length > 0) {
-                    tagsHtml = `
-                        <div class="task-card-tags">
-                            ${allTags.map(tag => `<span class="task-tag">${escapeHtml(tag)}</span>`).join('')}
-                        </div>
-                    `;
+                taskItem.appendChild(taskContent);
+                taskItem.appendChild(tagsContainer);
+
+                const attachmentDisplay = document.createElement('div');
+                attachmentDisplay.className = 'sticker-display-area';
+                if (isHibernated) {
+                    const hibernateIcon = document.createElement('div');
+                    hibernateIcon.textContent = '💤';
+                    hibernateIcon.style.fontSize = '20px';
+                    attachmentDisplay.appendChild(hibernateIcon);
                 }
+                if (task.attachments && task.attachments.length > 0) {
+                    const figmaIconHTML = `<img src="figma.png" alt="Figma" width="22" height="22">`;
+                    const jiraIconHTML = `<img src="jira.png" alt="Jira" width="22" height="22">`;
+                    task.attachments.forEach(attachment => {
+                        const attachmentLink = document.createElement('a');
+                        attachmentLink.className = 'sticker-link';
+                        if (attachment.url && attachment.url.includes('figma.com')) {
+                            attachmentLink.innerHTML = figmaIconHTML;
+                        } else if (attachment.url && attachment.url.includes('atlassian.net')) {
+                            attachmentLink.innerHTML = jiraIconHTML;
+                        } else {
+                            attachmentLink.textContent = '📄';
+                        }
+                        attachmentLink.href = attachment.url || '#';
+                        attachmentLink.target = '_blank';
+                        attachmentLink.addEventListener('click', (e) => e.stopPropagation());
+                        attachmentDisplay.appendChild(attachmentLink);
+                    });
+                }
+                taskItem.appendChild(attachmentDisplay);
 
-                card.innerHTML = `
-                    ${badgeHtml}
-                    <div class="task-card-body">
-                        <div class="task-card-title">${escapeHtml(task.title)}</div>
-                        <div class="task-card-meta">
-                            ${metaHtml}
-                        </div>
-                    </div>
-                    ${tagsHtml}
-                `;
+                taskItem.addEventListener('click', () => {
+                    showModal(task);
+                });
 
-                return card;
+                taskItem.style.cursor = 'pointer';
+
+                setTimeout(() => {
+                    const titleLineHeight = parseInt(window.getComputedStyle(titleDisplay).lineHeight, 10) || 20;
+                    if (titleLineHeight > 0 && latestEntryDisplay && titleDisplay.scrollHeight > 0) {
+                        const titleLines = Math.round(titleDisplay.scrollHeight / titleLineHeight);
+                        latestEntryDisplay.style.webkitLineClamp = titleLines > 1 ? '2' : '3';
+                    }
+                }, 0);
+
+                return taskItem;
             };
 
             const getFilteredTasks = () => {
-                if (!activeFilter) return allTasks;
-                return allTasks.filter(task => {
-                    return task.peopleTags.includes(activeFilter) || task.moduleTags.includes(activeFilter);
-                });
+                let tasks = allTasks;
+
+                // Filter by view type (Active vs Archived)
+                if (showArchived) {
+                    tasks = tasks.filter(t => t.status === 'Completed' || t.archived);
+                } else {
+                    tasks = tasks.filter(t => !t.archived);
+                }
+
+                // Filter by tag
+                if (activeFilter) {
+                    tasks = tasks.filter(task => {
+                        return task.peopleTags.includes(activeFilter) || task.moduleTags.includes(activeFilter);
+                    });
+                }
+
+                return tasks;
             };
 
             const render = () => {
-                const filteredTasks = getFilteredTasks();
+                let filteredTasks = getFilteredTasks();
 
-                // Only show non-archived tasks
-                const visibleTasks = filteredTasks.filter(t => !t.archived);
-
-                const activeTasks = visibleTasks.filter(t => t.status === 'Active' || t.status === 'Hibernated');
-                const completedTasks = visibleTasks.filter(t => t.status === 'Completed');
-
-                // Sort: active by createdAt desc, completed by completedAt desc
-                activeTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                completedTasks.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-
-                // Stats (always from all tasks, not filtered)
-                const allVisible = allTasks.filter(t => !t.archived);
-                const totalActive = allVisible.filter(t => t.status === 'Active' || t.status === 'Hibernated').length;
-                const totalCompleted = allVisible.filter(t => t.status === 'Completed').length;
-                const total = allVisible.length;
-                const rate = total > 0 ? Math.round((totalCompleted / total) * 100) : 0;
-
-                document.getElementById('stat-active').textContent = totalActive;
-                document.getElementById('stat-completed').textContent = totalCompleted;
-                document.getElementById('stat-rate').textContent = `${rate}%`;
-                document.getElementById('stats-bar').style.display = 'flex';
-
-                // Active section
-                const activeGrid = document.getElementById('active-grid');
-                const activeSection = document.getElementById('active-section');
-                activeGrid.innerHTML = '';
-                activeSection.style.display = 'block';
-                document.getElementById('active-count').textContent = activeTasks.length;
-
-                if (activeTasks.length > 0) {
-                    activeTasks.forEach((task, i) => {
-                        activeGrid.appendChild(createTaskCard(task, i));
-                    });
+                // Sort
+                if (showArchived) {
+                    filteredTasks.sort((a, b) => new Date(b.completedAt || b.createdAt) - new Date(a.completedAt || a.createdAt));
                 } else {
-                    activeGrid.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1 / -1;">
-                            <div class="empty-emoji">🎉</div>
-                            <div>No active tasks — all clear!</div>
-                        </div>
-                    `;
+                    filteredTasks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 }
 
-                // Completed section
-                const completedGrid = document.getElementById('completed-grid');
-                const completedSection = document.getElementById('completed-section');
-                completedGrid.innerHTML = '';
-                completedSection.style.display = 'block';
-                document.getElementById('completed-count').textContent = completedTasks.length;
 
-                if (completedTasks.length > 0) {
-                    completedTasks.forEach((task, i) => {
-                        completedGrid.appendChild(createTaskCard(task, i));
+
+                // Content section
+                const tasksGrid = document.getElementById('tasks-grid');
+
+                tasksGrid.innerHTML = '';
+
+
+
+
+
+                if (filteredTasks.length > 0) {
+                    filteredTasks.forEach((task, i) => {
+                        tasksGrid.appendChild(createTaskCard(task, i));
                     });
                 } else {
-                    completedGrid.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1 / -1;">
-                            <div class="empty-emoji">📝</div>
-                            <div>No completed tasks yet</div>
-                        </div>
-                    `;
+                    if (showArchived) {
+                        tasksGrid.innerHTML = `
+                            <div class="empty-state" style="grid-column: 1 / -1;">
+                                <div class="empty-emoji">📝</div>
+                                <div>No archived or completed tasks yet.</div>
+                            </div>
+                        `;
+                    } else {
+                        tasksGrid.innerHTML = `
+                            <div class="empty-state" style="grid-column: 1 / -1;">
+                                <div class="empty-emoji">🎉</div>
+                                <div>No active tasks — all clear!</div>
+                            </div>
+                        `;
+                    }
                 }
 
                 // Filter bar
@@ -845,29 +2648,139 @@
                 const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
                 filterBar.innerHTML = '';
 
-                if (sortedTags.length === 0) return;
+                if (sortedTags.length === 0 && allTasks.length === 0) return;
 
-                // "All" chip
-                const allChip = document.createElement('div');
-                allChip.className = `filter-chip ${!activeFilter ? 'active' : ''}`;
-                allChip.textContent = 'All';
-                allChip.addEventListener('click', () => {
-                    activeFilter = null;
-                    render();
-                });
-                filterBar.appendChild(allChip);
+
+
+
+
 
                 sortedTags.forEach(tag => {
                     const chip = document.createElement('div');
                     chip.className = `filter-chip ${activeFilter === tag ? 'active' : ''}`;
-                    chip.textContent = `${tag} (${tagCounts[tag]})`;
+                    chip.textContent = tag;
                     chip.addEventListener('click', () => {
                         activeFilter = activeFilter === tag ? null : tag;
                         render();
                     });
                     filterBar.appendChild(chip);
                 });
+
+                // "Completed" chip (rightmost)
+                const completedChip = document.createElement('div');
+                completedChip.className = 'filter-chip filter-chip--archive';
+                completedChip.innerHTML = '📦 Completed';
+                completedChip.addEventListener('click', showArchiveView);
+                filterBar.appendChild(completedChip);
+
+                // Clone chips into mobile bottom bar
+                const mobileBar = document.getElementById('filter-bar-mobile');
+                if (mobileBar) {
+                    mobileBar.innerHTML = '';
+                    filterBar.childNodes.forEach(chip => {
+                        const clone = chip.cloneNode(true);
+                        // Re-attach event listeners since cloneNode doesn't copy them
+                        const originalTag = chip.textContent;
+                        if (originalTag.includes('Completed')) {
+                            clone.addEventListener('click', showArchiveView);
+                        } else {
+                            clone.addEventListener('click', () => {
+                                activeFilter = activeFilter === originalTag ? null : originalTag;
+                                render();
+                            });
+                        }
+                        mobileBar.appendChild(clone);
+                    });
+                }
             };
+
+
+            // --- ARCHIVE (COMPLETED) VIEW LOGIC ---
+            const showArchiveView = () => {
+                const archiveView = document.getElementById('archive-view');
+                const archiveContent = document.getElementById('archive-content');
+
+                // Set URL state
+                history.pushState({ view: 'archive' }, '', '#completed');
+
+                // Render completed items grouped by month
+                archiveContent.innerHTML = '';
+
+                // Only show archived tasks in the completed overlay
+                const completedTasks = allTasks.filter(t => t.archived);
+
+                // Sort by completion date descending
+                completedTasks.sort((a, b) => {
+                    const dateA = a.completedAt ? new Date(a.completedAt) : new Date(a.createdAt);
+                    const dateB = b.completedAt ? new Date(b.completedAt) : new Date(b.createdAt);
+                    return dateB - dateA;
+                });
+
+                if (completedTasks.length === 0) {
+                    archiveContent.innerHTML = `
+                        <div class="empty-state" style="margin-top: 50px;">
+                            <div class="empty-emoji">📝</div>
+                            <div>No completed tasks yet.</div>
+                        </div>`;
+                } else {
+                    // Group by month
+                    const groupedByMonth = {};
+                    completedTasks.forEach(task => {
+                        const date = task.completedAt ? new Date(task.completedAt) : new Date(task.createdAt);
+                        const monthYear = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        if (!groupedByMonth[monthYear]) groupedByMonth[monthYear] = [];
+                        groupedByMonth[monthYear].push(task);
+                    });
+
+                    for (const [monthYear, monthTasks] of Object.entries(groupedByMonth)) {
+                        let overallIndex = 0;
+                        const monthGroup = document.createElement('div');
+                        monthGroup.className = 'archive-month-group';
+
+                        const monthHeader = document.createElement('div');
+                        monthHeader.className = 'archive-month-header';
+                        monthHeader.textContent = monthYear;
+                        monthGroup.appendChild(monthHeader);
+
+                        const monthGrid = document.createElement('div');
+                        monthGrid.className = 'archive-month-grid';
+
+                        monthTasks.forEach((task, index) => {
+                            const taskItem = createTaskCard(task, overallIndex++);
+                            taskItem.classList.add('completed', 'is-archived'); // make look completed
+                            monthGrid.appendChild(taskItem);
+                        });
+
+                        monthGroup.appendChild(monthGrid);
+                        archiveContent.appendChild(monthGroup);
+                    }
+                }
+
+                // Add close listener
+                document.getElementById('close-archive-btn').addEventListener('click', hideArchiveView);
+
+                requestAnimationFrame(() => {
+                    archiveView.classList.add('show');
+                });
+            };
+
+            const hideArchiveView = () => {
+                const archiveView = document.getElementById('archive-view');
+                if (!archiveView) return;
+                archiveView.classList.remove('show');
+                if (window.location.hash === '#completed') {
+                    history.back();
+                }
+            };
+
+
+            // Handle popstate for back button
+            window.addEventListener('popstate', (event) => {
+                const archiveView = document.getElementById('archive-view');
+                if (archiveView && archiveView.classList.contains('show') && window.location.hash !== '#completed') {
+                    archiveView.classList.remove('show');
+                }
+            });
 
             // --- INIT ---
             const init = () => {

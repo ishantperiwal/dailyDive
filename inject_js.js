@@ -45,7 +45,7 @@ const newLogic = `
                 entriesWrapper.innerHTML = '';
                 entriesWrapper.className = 'timeline-view';
                 
-                const sortedKeys = Object.keys(modalParams.content).filter(k => k !== '_hibernation').sort();
+                const sortedKeys = Object.keys(modalParams.content).filter(k => k !== '_hibernation').sort().reverse();
                 
                 if (sortedKeys.length === 0) {
                     const emptyState = document.createElement('div');

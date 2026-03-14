@@ -1,0 +1,21 @@
+{
+  "name": "Daily Dive",
+  "short_name": "Daily Dive",
+  "description": "A smart checklist and note-taking application.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#444444",
+  "icons": [
+    {
+      "src": "dd.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "ddbig.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
